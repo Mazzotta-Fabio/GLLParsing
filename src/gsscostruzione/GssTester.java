@@ -20,7 +20,7 @@ public class GssTester {
 	//gss
 	private static Graph<String> gss;
 	//insieme r e u che sono gli insiemi usati per registrare le scelte del non determinismo
-	private static ArrayList<ElementiU> u;
+	private static ArrayList<ElementoU> u;
 	private static ArrayList<TriplaGSS>r;
 	//insieme p
 	private static ArrayList<ElementoP>p;
@@ -38,7 +38,7 @@ public class GssTester {
 					buf=line.toCharArray();
 					gss=new Graph<String>();
 					r=new ArrayList<TriplaGSS>();
-					u=new ArrayList<ElementiU>();
+					u=new ArrayList<ElementoU>();
 					p=new ArrayList<ElementoP>();
 					String esito=parse(buf);
 					if(esito.equals("SUCCESSO")){
@@ -184,13 +184,13 @@ public class GssTester {
 	//ok
 	public static void add(String etichetta, Vertex<String> nu,int j){
 		if((u.size()==0)&&(r.size()==0)){
-			u.add(new ElementiU(etichetta,nu));
+			u.add(new ElementoU(etichetta,nu));
 			r.add(new TriplaGSS(etichetta,nu,j));
 		}
 		else{
-			ElementiU el=u.get(j);
+			ElementoU el=u.get(j);
 			if(!((el.getEtichetta().equals(etichetta))&&(el.getU().element().equals(nu.element())))){
-				u.add(new ElementiU(etichetta,nu));
+				u.add(new ElementoU(etichetta,nu));
 				r.add(new TriplaGSS(etichetta,nu,j));
 			}
 		}
