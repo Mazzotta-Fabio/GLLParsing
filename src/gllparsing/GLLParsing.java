@@ -27,7 +27,7 @@ public class GLLParsing {
 	private static ArrayList<ElementoP>p;
 	private static List<Operazione> op;
 	 
-	public static void main(String []args){
+	public static void main(String []args) {
 		File f=new File("file.txt");
 		File fJson=new File("log.json");
 		Scanner buffer;
@@ -47,38 +47,41 @@ public class GLLParsing {
 					op.add(Operazione.creaParsingInfo("parsing_info","GLLParsing",f.getName(),"19/02/2020"));
 					op.add(Operazione.creaMessage("message","Initializing parser"));
 					String esito=parse(buf);
+					System.out.println(esito);
 					System.out.println(u.size());
-					if(esito.equals("SUCCESSO")){
-						Gson gson=new Gson();
-						FileWriter writer2=new FileWriter(fJson);
-						String jsonString=gson.toJson(op);
-						PrintWriter pw3=new PrintWriter(writer2,true);
-						pw3.println(jsonString);
-						pw3.close();
-						File f1=new File("grafo.dot");
-						FileWriter writer=new FileWriter(f1);
-						PrintWriter pw=new PrintWriter(writer,true);
-						pw.println("diGraph G {");
-						Iterator<Edge<String>> iterator=gss.edges();
-						while(iterator.hasNext()){
-							Edge<String> e=iterator.next();
-							Vertex<String> u=e.getStartVertex();
-							Vertex<String> v=e.getEndVertex();
-							if(!(v.element().equals("$"))){
-								pw.println(u.element()+"->"+v.element());
-							}
-						}
-						pw.println("}");
-						pw.close();
-					}
-					else{
-						System.out.println(esito);
-					}
 					
 				}	
 			}
 			catch(Exception e){
 				e.printStackTrace();
+			}
+			finally {
+				try {
+					Gson gson=new Gson();
+					FileWriter writer2=new FileWriter(fJson);
+					String jsonString=gson.toJson(op);
+					PrintWriter pw3=new PrintWriter(writer2,true);
+					pw3.println(jsonString);
+					pw3.close();
+					File f1=new File("grafo.dot");
+					FileWriter writer=new FileWriter(f1);
+					PrintWriter pw=new PrintWriter(writer,true);
+					pw.println("diGraph G {");
+					Iterator<Edge<String>> iterator=gss.edges();
+					while(iterator.hasNext()){
+						Edge<String> e=iterator.next();
+						Vertex<String> u=e.getStartVertex();
+						Vertex<String> v=e.getEndVertex();
+						if(!(v.element().equals("$"))){
+							pw.println(u.element()+"->"+v.element());
+						}
+					}
+					pw.println("}");
+					pw.close();
+				}
+				catch(IOException e) {
+					e.printStackTrace();
+				}
 			}
 		}
 		else{
@@ -293,6 +296,7 @@ public class GLLParsing {
 				}
 				else{
 					if(u.size()==0){
+						op.add(Operazione.creaMessage("message","No recovery state found on stack"));
 						op.add(Operazione.creaParseEndFailure("error_recovery","fails"));
 						return "NON SUCCESSO";
 					}
@@ -302,6 +306,7 @@ public class GLLParsing {
 							return "SUCCESSO";
 						}
 						else{
+							op.add(Operazione.creaMessage("message","No recovery state found on stack"));
 							op.add(Operazione.creaParseEndFailure("error_recovery","fails"));
 							return "NON SUCCESSO";
 						}
