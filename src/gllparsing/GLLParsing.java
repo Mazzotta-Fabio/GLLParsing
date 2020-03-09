@@ -1,7 +1,6 @@
 package gllparsing;
 
 import graph.*;
-import gsscostruzione.*;
 import java.io.*;
 import java.util.*;
 import com.google.gson.Gson;
@@ -22,9 +21,12 @@ public class GLLParsing {
 	private static Graph<String> gss;
 	//insieme r e u che sono gli insiemi usati per registrare le scelte del non determinismo
 	private static ArrayList<ElementoU> u;
-	private static ArrayList<TriplaGSS>r;
+	private static ArrayList<NewTriplaGss>r;
 	//insieme p
-	private static ArrayList<ElementoP>p;
+	private static ArrayList<NewElementoP>p;
+	//sppf
+	private static Graph<IdNodoSppf> sppf;
+	//insieme usato per le operazioni di logging
 	private static List<Operazione> op;
 	 
 	public static void main(String []args) {
@@ -40,16 +42,16 @@ public class GLLParsing {
 					String line=buffer.nextLine();
 					buf=line.toCharArray();
 					gss=new Graph<String>();
-					r=new ArrayList<TriplaGSS>();
+					sppf=new Graph<IdNodoSppf>();
+					r=new ArrayList<NewTriplaGss>();
 					u=new ArrayList<ElementoU>();
-					p=new ArrayList<ElementoP>();
+					p=new ArrayList<NewElementoP>();
 					op=new ArrayList<Operazione>();
-					op.add(Operazione.creaParsingInfo("parsing_info","GLLParsing",f.getName(),"19/02/2020"));
-					op.add(Operazione.creaMessage("message","Initializing parser"));
+					Date d=new Date();
+					op.add(Operazione.creaParsingInfo("GLLParsing",f.getName(),d.toString()));
 					String esito=parse(buf);
 					System.out.println(esito);
 					System.out.println(u.size());
-					
 				}	
 			}
 			catch(Exception e){
@@ -67,13 +69,13 @@ public class GLLParsing {
 					FileWriter writer=new FileWriter(f1);
 					PrintWriter pw=new PrintWriter(writer,true);
 					pw.println("diGraph G {");
-					Iterator<Edge<String>> iterator=gss.edges();
+					Iterator<Edge<IdNodoSppf>> iterator=sppf.edges();
 					while(iterator.hasNext()){
-						Edge<String> e=iterator.next();
-						Vertex<String> u=e.getStartVertex();
-						Vertex<String> v=e.getEndVertex();
-						if(!(v.element().equals("$"))){
-							pw.println(u.element()+"->"+v.element());
+						Edge<IdNodoSppf> e=iterator.next();
+						Vertex<IdNodoSppf> u=e.getStartVertex();
+						Vertex<IdNodoSppf> v=e.getEndVertex();
+						if(!(v.element().getNomeNodo().equals("$"))){
+							pw.println(u.element().toString()+"->"+v.element().toString());
 						}
 					}
 					pw.println("}");
@@ -99,56 +101,58 @@ public class GLLParsing {
 		gss.insertVertex("Ls0L0");
 		gss.insertDirectedEdge(gss.getLastNode(),u0, "");
 		Vertex<String> cu=gss.getLastNode();
-		op.add(Operazione.creaReadNextToken("read_next_token",i,""+buf[i],1,"-1","TY"));
-		op.add(Operazione.creaInizializzazione("stack_inizialization"));
-		op.add(Operazione.creaInizializzazione("stack_removeAllElements"));
-		op.add(Operazione.creaGoto("goto", etichetta));
+		//creazione nodo sppf
+		Vertex<IdNodoSppf> cn=sppf.insertVertex(new IdNodoSppf("S"));
+		cn.element().setId(cn.hashCode());
+		op.add(Operazione.creaInsertNodeGSS("$"));
+		op.add(Operazione.creaInsertNodeGSS("Ls"+i+"L0"));
+		op.add(Operazione.creaInsertEdgeGSS(gss.getLastNode().element(),u0.element()));
+		op.add(Operazione.creaCurrentToken(i,""+buf[i]));
+		op.add(Operazione.creaInsertNodeSppf(cn.toString()));
 		while(true){
-			//op.add(Operazione.creaOperazione8("goto",etichetta));
 			switch(etichetta){
 			//non terminale LL1
 			//S
 			case "LS":
+				op.add(Operazione.creaGoto(etichetta,"S"));
 				if(test(buf[i],"S","ASd")){
-					add("LS1",cu,i);
+					add("LS1",cu,i,cn);
 				}
 				if(test(buf[i],"S","BS")){
-					add("LS2",cu,i);
+					add("LS2",cu,i,cn);
 				}
-				if((buf[i]=='d')||(buf[i]=='$')){
-					add("LS3",cu,i);
+				if(test(buf[i],"S","e")){
+					add("LS3",cu,i,cn);
 				}
 				etichetta="L0";
 				break;
 			//terminale LL1 A
 			case "LA":
+				op.add(Operazione.creaGoto(etichetta,"A"));
 				if(test(buf[i],"A","a")){
 					etichetta="La";
-					op.add(Operazione.creaShift("shift",etichetta,i,""+buf[i],i,etichetta,".a"));
 				}
 				if(test(buf[i],"A","c")){
 					etichetta="Lc";
-					op.add(Operazione.creaShift("shift",etichetta,i,""+buf[i],i,etichetta,".c"));
 				}
 				break;
 			//terminale LL1 B
 			case "LB":
+				op.add(Operazione.creaGoto(etichetta,"B"));
 				if(test(buf[i],"B","a")){
-					etichetta="La";
-					op.add(Operazione.creaShift("shift",etichetta,i,""+buf[i],i,etichetta,".a"));
+					etichetta="Lab";
 				}
 				if(test(buf[i],"B","b")){
 					etichetta="Lb";
-					op.add(Operazione.creaShift("shift","Lb",i,""+buf[i],i,"La",".b"));
 				}
 				break;
 			//.ASd
 			case "LS1":
+				op.add(Operazione.creaGoto(etichetta,"S->*ASd"));
 				if(test(buf[i],"S","ASd")){
-					cu=create("L1",cu,i);
+					cu=create("L1",cu,i,cn);
+					cn=getNodeT("ASd",cn);
 					etichetta="LA";
-					op.add(Operazione.creaPushStack("stack_push",i,""+buf[i], 1,etichetta,""));
-					op.add(Operazione.creaGoto("goto",etichetta));
 				}
 				else{
 					etichetta="L0";
@@ -156,11 +160,15 @@ public class GLLParsing {
 				break;
 			//A.Sd
 			case "L1":
+				op.add(Operazione.creaGoto(etichetta,"S->A*Sd"));
 				if(test(buf[i],"S","Sd")){
-					cu=create("L2",cu,i);
+					cu=create("L2",cu,i,cn);
+					/*
+					if(i<buf.length-2) {
+						cn=getNodeT("S",cn);
+					}
+					*/
 					etichetta="LS";
-					op.add(Operazione.creaPushStack("stack_push",i,""+buf[i], 1,etichetta,""));
-					op.add(Operazione.creaGoto("goto",etichetta));
 				}
 				else{
 					etichetta="L0";
@@ -168,11 +176,12 @@ public class GLLParsing {
 				break;
 			//AS.d
 			case "L2":
+				op.add(Operazione.creaGoto(etichetta,"S->AS*d"));
 				if(buf[i]=='d'){
 					i++;
 					etichetta="Ld";
-					op.add(Operazione.creaReadNextToken("read_next_token",i,""+buf[i], 2, etichetta,"AS.d"));
-					op.add(Operazione.creaShift("shift",etichetta,i,""+buf[i],i,etichetta,"AS.d"));
+					//cn=getNodeT("d",cn);
+					op.add(Operazione.creaCurrentToken(i,""+buf[i]));
 				}
 				else{
 					etichetta="L0";
@@ -180,19 +189,18 @@ public class GLLParsing {
 				break;
 			//ASd.
 			case "Ld":
-				pop(cu,i,u0);
+				op.add(Operazione.creaGoto(etichetta,"S->ASd*"));
+				//cn=getNodeP("d",cn.hashCode());
+				pop(cu,i,u0,cn);
 				etichetta="L0";
-				op.add(Operazione.creaReduce("reduce",1,1,1));
-				op.add(Operazione.creaPopStack("stack_pop",i,""+buf[i],1, etichetta,""));
-				op.add(Operazione.creaMessage("message", "Reduce rule"));
 				break;
 			//.BS
 			case "LS2":
+				op.add(Operazione.creaGoto(etichetta,"S->*BS"));
 				if(test(buf[i],"S","BS")){
-					cu=create("L3",cu,i);
+					cu=create("L3",cu,i,cn);
+					cn=getNodeT("BS",cn);
 					etichetta="LB";
-					op.add(Operazione.creaPushStack("stack_push",i,""+buf[i], 1,etichetta,""));
-					op.add(Operazione.creaGoto("goto",etichetta));
 				}
 				else{
 					etichetta="L0";
@@ -200,11 +208,15 @@ public class GLLParsing {
 				break;
 			//B.S
 			case "L3":
+				op.add(Operazione.creaGoto(etichetta,"S->B*S"));
 				if(test(buf[i],"S","S")){
-					cu=create("L4",cu,i);
+					cu=create("L4",cu,i,cn);
+					/*
+					if(i<buf.length-2) {
+						cn=getNodeT("S",cn);
+					}
+					*/
 					etichetta="LS";
-					op.add(Operazione.creaPushStack("stack_push",i,""+buf[i], 1,etichetta,""));
-					op.add(Operazione.creaGoto("goto",etichetta));
 				}
 				else{
 					etichetta="L0";
@@ -212,27 +224,26 @@ public class GLLParsing {
 				break;
 			//BS.
 			case "L4":
-				pop(cu,i,u0);
+				op.add(Operazione.creaGoto(etichetta,"S->BS*"));
+				pop(cu,i,u0,cn);
 				etichetta="L0";
-				op.add(Operazione.creaReduce("reduce",1,1,1));
-				op.add(Operazione.creaPopStack("stack_pop",i,""+buf[i],1, etichetta,""));
-				op.add(Operazione.creaMessage("message", "Reduce rule"));
 				break;
 			//epsilon
 			case "LS3":
-				pop(cu,i,u0);
+				pop(cu,i,u0,cn);
+				cn=getNodeT("e",cn);
+				cn=getNodeP("e",cn.hashCode());
 				etichetta="L0";
-				op.add(Operazione.creaReduce("reduce",1,1,1));
-				op.add(Operazione.creaPopStack("stack_pop",i,""+buf[i],1, etichetta,""));
-				op.add(Operazione.creaMessage("message", "Reduce rule"));
+				op.add(Operazione.creaGoto(etichetta,"S->e*"));
 				break;
 			//.a
 			case "La":
+				op.add(Operazione.creaGoto(etichetta,"A->*a"));
 				if(buf[i]=='a'){
+					cn=getNodeT("a",cn);
 					i++;
 					etichetta="La1";
-					op.add(Operazione.creaReadNextToken("read_next_token",i,""+buf[i], 2, etichetta,".a"));
-					op.add(Operazione.creaShift("shift",etichetta,i,""+buf[i],i,etichetta,".a"));
+					op.add(Operazione.creaCurrentToken(i,""+buf[i]));
 				}
 				else{
 					etichetta="L0";
@@ -240,19 +251,39 @@ public class GLLParsing {
 				break;
 			//a.
 			case "La1":
-				pop(cu,i,u0);
+				op.add(Operazione.creaGoto(etichetta,"A->a*"));
+				cn=getNodeP("a",cn.hashCode());
+				pop(cu,i,u0,cn);
 				etichetta="L0";
-				op.add(Operazione.creaReduce("reduce",1,1,1));
-				op.add(Operazione.creaPopStack("stack_pop",i,""+buf[i],1, etichetta,""));
-				op.add(Operazione.creaMessage("message", "Reduce rule"));
+				break;
+			//.a
+			case "Lab":
+				op.add(Operazione.creaGoto(etichetta,"B->*a"));
+				if(buf[i]=='a'){
+					cn=getNodeT("a",cn);
+					i++;
+					etichetta="La1b";
+					op.add(Operazione.creaCurrentToken(i,""+buf[i]));
+				}
+				else{
+					etichetta="L0";
+				}
+				break;
+			//a.
+			case "La1b":
+				op.add(Operazione.creaGoto(etichetta,"B->a*"));
+				cn=getNodeP("a",cn.hashCode());
+				pop(cu,i,u0,cn);
+				etichetta="L0";
 				break;
 			//.b
 			case "Lb":
+				op.add(Operazione.creaGoto(etichetta,"B->*b"));
 				if(buf[i]=='b'){
+					cn=getNodeT("b",cn);
 					i++;
 					etichetta="Lb1";
-					op.add(Operazione.creaReadNextToken("read_next_token",i,""+buf[i], 2, etichetta,".b"));
-					op.add(Operazione.creaShift("shift",etichetta,i,""+buf[i],i,etichetta,".b"));
+					op.add(Operazione.creaCurrentToken(i,""+buf[i]));
 				}
 				else{
 					etichetta="L0";
@@ -260,19 +291,19 @@ public class GLLParsing {
 				break;
 			//b.
 			case "Lb1":
-				pop(cu,i,u0);
+				op.add(Operazione.creaGoto(etichetta,"B->b*"));
+				cn=getNodeP("b",cn.hashCode());
+				pop(cu,i,u0,cn);
 				etichetta="L0";
-				op.add(Operazione.creaReduce("reduce",1,1,1));
-				op.add(Operazione.creaPopStack("stack_pop",i,""+buf[i],1, etichetta,""));
-				op.add(Operazione.creaMessage("message", "Reduce rule"));
 				break;
 			//.c
 			case "Lc":
+				op.add(Operazione.creaGoto(etichetta,"A->*c"));
 				if(buf[i]=='c'){
+					cn=getNodeT("c",cn);
 					i++;
 					etichetta="Lc1";
-					op.add(Operazione.creaReadNextToken("read_next_token",i,""+buf[i], 2, etichetta,".c"));
-					op.add(Operazione.creaShift("shift",etichetta,i,""+buf[i],i,etichetta,".c"));
+					op.add(Operazione.creaCurrentToken(i,""+buf[i]));
 				}
 				else{
 					etichetta="L0";
@@ -280,34 +311,34 @@ public class GLLParsing {
 				break;
 			//c.
 			case "Lc1":
-				pop(cu,i,u0);
+				op.add(Operazione.creaGoto(etichetta,"A->c*"));
+				cn=getNodeP("c",cn.hashCode());
+				pop(cu,i,u0,cn);
 				etichetta="L0";
-				op.add(Operazione.creaReduce("reduce",1,1,1));
-				op.add(Operazione.creaPopStack("stack_pop",i,""+buf[i],1, etichetta,""));
-				op.add(Operazione.creaMessage("message", "Reduce rule"));
 				break;
 			case "L0":
 				if(r.size()>0){
+					op.add(Operazione.creaGoto(etichetta,"S0"));
 					etichetta=r.get(0).getEtichetta();
 					i=r.get(0).getI();
 					cu=r.get(0).getU();
+					cn=r.get(0).getW();
 					System.out.println(r.get(0));
+					op.add(Operazione.creaInformazione("remove_r_element"));
 					r.remove(0);
 				}
 				else{
 					if(u.size()==0){
-						op.add(Operazione.creaMessage("message","No recovery state found on stack"));
-						op.add(Operazione.creaParseEndFailure("error_recovery","fails"));
+						op.add(Operazione.creaInformazione("failure_parse"));
 						return "NON SUCCESSO";
 					}
 					else{
 						if((u.get(u.size()-1).getEtichetta().equals("L0"))&&(u.get(u.size()-1).getU().element().equals(u0.element()))){
-							op.add(Operazione.creaParseEndSucccess("parse_end",true));
+							op.add(Operazione.creaInformazione("success_parse"));
 							return "SUCCESSO";
 						}
 						else{
-							op.add(Operazione.creaMessage("message","No recovery state found on stack"));
-							op.add(Operazione.creaParseEndFailure("error_recovery","fails"));
+							op.add(Operazione.creaInformazione("failure_parse"));
 							return "NON SUCCESSO";
 						}
 					}
@@ -317,33 +348,73 @@ public class GLLParsing {
 		}
 	}
 	
+	public static Vertex<IdNodoSppf> getNodeT(String item,Vertex<IdNodoSppf>cn){
+		Vertex<IdNodoSppf> v=sppf.insertVertex(new IdNodoSppf(item));
+		v.element().setId(v.hashCode());
+		op.add(Operazione.creaInsertNodeSppf(v.toString()));
+		sppf.insertDirectedEdge(cn, v, null);
+		op.add(Operazione.creaInsertEdgeSppf(cn.toString(),v.toString()));
+		return v;
+	}
+	
+	public static Vertex<IdNodoSppf> getNodeP(String item,int i){
+		Iterator<Edge<IdNodoSppf>>it=sppf.edges();
+		while(it.hasNext()) {
+			Edge<IdNodoSppf>e=it.next();
+			Vertex<IdNodoSppf> v1=e.getStartVertex();
+			Vertex<IdNodoSppf> v2=e.getEndVertex();
+			if(v2.element().getId()==i) {
+				/*extra*/
+				/*
+				Iterator<Edge<IdNodoSppf>>it2=sppf.edges();
+				while(it2.hasNext()) {
+					Edge<IdNodoSppf>e2=it2.next();
+					Vertex<IdNodoSppf> v3=e2.getStartVertex();
+					Vertex<IdNodoSppf> v4=e2.getEndVertex();
+					if(v4.element().getId()==v1.element().getId()) {
+						return v3;
+					}
+				}
+				/*fine extra*/
+				return v1;
+			}
+		}
+		return null;
+	}
+	
 	//ok
-	public static void add(String etichetta, Vertex<String> nu,int j){
+	public static void add(String etichetta, Vertex<String> nu,int j,Vertex<IdNodoSppf>cn){
 		if((u.size()==0)&&(r.size()==0)){
 			u.add(new ElementoU(etichetta,nu));
-			r.add(new TriplaGSS(etichetta,nu,j));
+			r.add(new NewTriplaGss(etichetta,nu,j,cn));
+			op.add(Operazione.creaInsertUelement(etichetta, nu.element()));
+			op.add(Operazione.creaInsertRelement(etichetta,nu.element(), j,cn.toString()));
 		}
 		else{
 			ElementoU el=u.get(j);
 			if(!((el.getEtichetta().equals(etichetta))&&(el.getU().element().equals(nu.element())))){
 				u.add(new ElementoU(etichetta,nu));
-				r.add(new TriplaGSS(etichetta,nu,j));
+				r.add(new NewTriplaGss(etichetta,nu,j,cn));
+				op.add(Operazione.creaInsertUelement(etichetta, nu.element()));
+				op.add(Operazione.creaInsertRelement(etichetta,nu.element(), j,cn.toString()));
 			}
 		}
 	}
 	
-	public static Vertex<String> create(String etichetta,Vertex<String> u,int j){
+	public static Vertex<String> create(String etichetta,Vertex<String> u,int j,Vertex<IdNodoSppf>cn){
 		//creazione del nodo
+		String nomeNodo="Ls"+j+etichetta;
 		Vertex<String> v=null;
 		Iterator<Vertex<String>> iteratorNodes=gss.vertices();
 		while(iteratorNodes.hasNext()){
 			Vertex<String> last=iteratorNodes.next();
-			if(etichetta.equals(last.element())){
+			if(nomeNodo.equals(last.element())){
 				v=last;
 			}
 		}
 		if(v==null){
-			v=gss.insertVertex("Ls"+j+etichetta);
+			v=gss.insertVertex(nomeNodo);
+			op.add(Operazione.creaInsertNodeGSS(v.element()));
 		}
 		//controlliamo arco tra v ed u
 		Iterator<Edge<String>> eset=gss.edges();
@@ -358,21 +429,22 @@ public class GLLParsing {
 		}
 		if(flag){
 			gss.insertDirectedEdge(v, u, "");
-			for(ElementoP elp:p){
+			op.add(Operazione.creaInsertEdgeGSS(v.element() ,u.element()));
+			for(NewElementoP elp:p){
 				if(elp.getU().element().equals(v.element())){
-					add(etichetta,u,elp.getK());
+					add(etichetta,u,elp.getK(),elp.getZ());
 				}
 			}
 		}
-		
 		return v;
 	}
 	
-	public static void pop(Vertex<String> u,int j,Vertex<String> u0){
+	public static void pop(Vertex<String> u,int j,Vertex<String> u0,Vertex<IdNodoSppf>cn){
 		//if u diverso da u0
 		if(!(u.element().equals(u0.element()))){
 			//mettiamo elemento u,j a p
-			p.add(new ElementoP(u,j));
+			p.add(new NewElementoP(u,j,cn));
+			op.add(Operazione.creaInsertPelement(u.element(),j,cn.toString()));
 			Iterator<Edge<String>> eset=gss.edges();
 			//per ogni figlio v di aggiungi lu,v,j ad r e u
 			while(eset.hasNext()){
@@ -380,7 +452,7 @@ public class GLLParsing {
 				Vertex<String>u1=ed.getStartVertex();
 				Vertex<String> v1=ed.getEndVertex();
 				if(u.element().equals(u1.element())){
-					add(u1.element().substring(3),v1,j);
+					add(u1.element().substring(3),v1,j,cn);
 				}
 			}
 		}
@@ -404,6 +476,7 @@ public class GLLParsing {
         if(handle.equals("a")&&(x=='a')){return true;}
         if(handle.equals("b")&&(x=='b')){return true;}
         if(handle.equals("c")&&(x=='c')){return true;}
+        if(handle.equals("e")&&(x=='d')){return true;}
 		return false;
         
 	}

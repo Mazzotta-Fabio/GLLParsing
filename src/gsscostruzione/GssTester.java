@@ -6,6 +6,8 @@ import graph.*;
 import java.io.*;
 import java.util.*;
 
+import gllparsing.ElementoU;
+
 /*
  * GRAMMATICA
  * S->ASd
