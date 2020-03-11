@@ -1,4 +1,4 @@
-package gllparsing;
+package graph;
 
 public class IdNodoSppf {
 	private String nomeNodo;
@@ -20,6 +20,6 @@ public class IdNodoSppf {
 		this.id = id;
 	}
 	public String toString() {
-		return (nomeNodo+id).substring(0,5);
+		return (nomeNodo+id).substring(0,10);
 	}
 }

@@ -31,6 +31,10 @@ var stdLabel = new NodeLabelType("Standard node label");
 var fineLevel = new DetailLevel("Fine");
 var coarseLevel = new DetailLevel("Coarse");
 
+var lastErrorRecovery = null;
+var lastStep = null;
+var lastStepActStart = null;
+
 //creazione nodo
 function initialPos(graph, refNodes) {
     return new Supplier({
@@ -52,17 +56,18 @@ function initialPos(graph, refNodes) {
 }
 
 function parsing_info(obj){
-	events = new Log(null, ["Step"]);
+	events = new Log(null, ["SubSubAction", "SubAction", "Action", "Step"]);
     events.addAttribute(new Attribute("Input file", obj.inputfile));
     events.addAttribute(new Attribute("Parser", obj.parser));
     events.addAttribute(new Attribute("Timestamp", obj.date));
-   // events.addGraph(gss);
-    //events.addGraph(r);
-   // events.addGraph(u);
-  //  events.addGraph(p);
-   // events.addGraph(states);
+    
+    events.addGraph(gss);
+    events.addGraph(r);
+    events.addGraph(u);
+    events.addGraph(p);
+    events.addGraph(states);
     events.addGraph(sppf);
-   // events.addText(inputfile);
+    events.addText(inputfile);
     
     events.addConfig(stdLabel);
     events.addConfig(fineLevel);
@@ -72,8 +77,8 @@ function parsing_info(obj){
 }
 
 function goto(obj){
+	var ce = newStepCompositeEvent(obj);
 	var descr=obj.to_state+" "+obj.item;
-	var ce=new CompositeEvent("goto "+descr, 1, events.getRoot());
 	var n = new Node(descr, states, initialPos(states, stateElements.length > 0 ? [stateElements[stateElements.length - 1]] : []), ce);
 	new NodeColor(n,Color.CYAN, ce);
 	new NodeLabel(fineLevel, n, descr, stdLabel, ce);
@@ -84,8 +89,8 @@ function goto(obj){
 }
 
 function insert_gss_node(obj){
-	var descr=obj.parse_state;
-	var ce=new CompositeEvent("insert_gss_node "+descr, 1, events.getRoot());
+	var ce = newActionCompositeEvent(obj);
+	var descr = obj.parse_state;
 	n = new Node(descr, gss, initialPos(gss, gssNodes.length > 0 ? [gssNodes[gssNodes.length - 1]] : []), ce);
 	new NodeColor(n,Color.YELLOW, ce);
 	new NodeLabel(fineLevel, n, descr, stdLabel, ce);
@@ -93,15 +98,15 @@ function insert_gss_node(obj){
 }
 
 function insert_gss_edge(obj){
-	var descr=obj.u+" "+obj.v;
-	var ce=new CompositeEvent("insert_gss_edge "+descr, 1, events.getRoot());
+	var ce = newActionCompositeEvent(obj);
+	var descr = obj.u+" "+obj.v;
 	var e = new Edge(gssNodes[obj.u], gssNodes[obj.v], gss, ce);
 	new EdgeStyle(e, Color.BLACK, ce);
 }
 
 function insert_r_element(obj){
-	var descr=obj.label+" "+obj.nameNode+" "+obj.i+" "+obj.nameNodeSppf;
-	var ce=new CompositeEvent("insert_r_element "+descr, 1, events.getRoot());
+	var ce = newActionCompositeEvent(obj);
+	var descr = obj.label+" "+obj.nameNode+" "+obj.i+" "+(obj.nameNodeSppf).replace(/[0-9]/g,'');;
 	var n = new Node(descr, r, initialPos(r, rElements.length > 0 ? [rElements[rElements.length - 1]] : []), ce);
 	new NodeColor(n,Color.ORANGE, ce);
 	new NodeLabel(fineLevel, n, descr, stdLabel, ce);
@@ -112,13 +117,13 @@ function insert_r_element(obj){
 	}
 }
 function remove_r_element(obj){
-	var ce=new CompositeEvent("remove_r_element ", 1, events.getRoot());
+	var ce = newActionCompositeEvent(obj);
 	new Delete(rElements.shift(), ce);
 }
 
 function insert_u_element(obj){
-	var descr=obj.label+" "+obj.nameNode;
-	var ce=new CompositeEvent("insert_u_element "+descr, 1, events.getRoot());
+	var ce = newActionCompositeEvent(obj);
+	var descr = obj.label+" "+obj.nameNode;
 	var n = new Node(descr, u, initialPos(u, uElements.length > 0 ? [uElements[uElements.length - 1]] : []), ce);
 	new NodeColor(n,Color.GREEN, ce);
 	new NodeLabel(fineLevel, n, descr, stdLabel, ce);
@@ -128,9 +133,10 @@ function insert_u_element(obj){
 	    new EdgeStyle(e, Color.BLACK, ce);
 	}
 }
+
 function insert_p_element(obj){
-	var descr=obj.nameNode+" "+obj.i+" "+obj.nameNodeSppf;
-	var ce=new CompositeEvent("insert_p_element "+descr, 1, events.getRoot());
+	var ce = newActionCompositeEvent(obj);
+	var descr=obj.nameNode+" "+obj.i+" "+obj.nameNodeSppf.replace(/[0-9]/g,'');
 	var n = new Node(descr, p, initialPos(p, pElements.length > 0 ? [pElements[pElements.length - 1]] : []), ce);
 	new NodeColor(n,Color.ORANGE, ce);
 	new NodeLabel(fineLevel, n, descr, stdLabel, ce);
@@ -172,8 +178,8 @@ function loadtextinputfile(fileinput) {
 }
 
 function insert_sppf_node(obj){
-	var descr=obj.parse_state;
-	var ce=new CompositeEvent("insert_sppf_node "+descr, 1, events.getRoot());
+	var ce = newActionCompositeEvent(obj);
+	var descr=(obj.parse_state).replace(/[0-9]/g,'');
 	n = new Node(descr, sppf, initialPos(sppf, sppfNodes.length > 0 ? [sppfNodes[sppfNodes.length - 1]] : []), ce);
 	var expr = /^[a-z()+]/;
 	if(expr.test(descr)){
@@ -184,13 +190,11 @@ function insert_sppf_node(obj){
 	}
 	new NodeLabel(fineLevel, n, descr, stdLabel, ce);
 	sppfNodes[obj.parse_state]=n;
-	//sppfNodes[sppfNodes.length-1]=n;
 }
 
 function insert_sppf_edge(obj){
+	var ce = newActionCompositeEvent(obj);
 	var descr=obj.u+" "+obj.v;
-	var ce=new CompositeEvent("insert_sppf_edge "+descr, 1, events.getRoot());
-	//var e = new Edge(sppfNodes[sppfNodes.length-2], sppfNodes[sppfNodes.length-1], sppf, ce);
 	var e = new Edge(sppfNodes[obj.u], sppfNodes[obj.v], sppf, ce);
 	new EdgeStyle(e, Color.BLACK, ce);
 }
@@ -202,10 +206,59 @@ function current_token(obj){
 }
 
 function failure_parse(obj){
-	
+	var ce=new CompositeEvent(obj.op, 1, events.getRoot());
 }
+
 function success_parse(obj){
-	
+	var ce=new CompositeEvent(obj.op, 1, events.getRoot());
+}
+
+function error_parse(obj){
+	var ce=new CompositeEvent(obj.op, 1, events.getRoot());
+}
+
+function newActionCompositeEvent(op, autoop) {
+	return lastStepActStart == null ? newCompositeEvent(opToString(op), lastErrorRecovery == null ? 3 : 2, lastStep, autoop) : newCompositeEvent(opToString(op), lastErrorRecovery == null ? 2 : 1, lastStep, autoop);
+}
+
+function lastStepActStart() {
+	return lastStep && lastStep.getLogText().contains("act:\"start\"");
+}
+
+function newCompositeEvent(logText, granularity, parent, autoop) {
+	return autoop ? CompositeEvent.makeAuto(logText, granularity, parent) : new CompositeEvent(logText, granularity, parent);
+}
+
+function opToString(obj) {
+	var res = obj.op;
+	for (var key in obj) {
+		if(((obj.op == "insert_p_element")||(obj.op == "insert_sppf_edge")||(obj.op == "insert_sppf_node")||(obj.op == "insert_r_element"))&&((key=="parse_state")||(key == "nameNodeSppf")||(key == "u")||(key == "v"))){
+			res += " " + ((JSON.stringify(obj[key])).replace(/[0-9]/g,''));
+		}
+		else{
+			if(key != "op"){
+				res += " " + JSON.stringify(obj[key]);
+			}
+		}
+	}
+	return res.replace(/"/g,'');
+}
+
+function newStepCompositeEvent(op, autoop) {
+	if(lastStepActStart) {
+		var ec = lastStep = lastErrorRecovery == null ? newCompositeEvent(opToString(op), 3, lastStepActStart, autoop) : newCompositeEvent(opToString(op), 2, lastStepActStart, autoop);
+		if(op.act == "end") {
+			lastStep = lastStepActStart.getParent();
+			lastStepActStart = null;
+		}
+		return ec;
+	} else {
+		lastStep = lastErrorRecovery == null ? newCompositeEvent(opToString(op), 4, events.getRoot(), autoop) : newCompositeEvent(opToString(op), 3, lastErrorRecovery, autoop);
+		if(op.act == "start") {
+			lastStepActStart = lastStep;
+		}
+		return lastStep;
+	}
 }
 
 logArr = JSON.parse(json_log);

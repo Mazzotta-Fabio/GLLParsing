@@ -1,5 +1,6 @@
 package gllparsing;
 
+import graph.IdNodoSppf;
 import graph.Vertex;
 
 public class NewElementoP {

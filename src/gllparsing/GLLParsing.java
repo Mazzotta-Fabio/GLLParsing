@@ -55,6 +55,7 @@ public class GLLParsing {
 				}	
 			}
 			catch(Exception e){
+				op.add(Operazione.creaInformazione("error_parse"));
 				e.printStackTrace();
 			}
 			finally {
@@ -65,6 +66,7 @@ public class GLLParsing {
 					PrintWriter pw3=new PrintWriter(writer2,true);
 					pw3.println(jsonString);
 					pw3.close();
+					/*
 					File f1=new File("grafo.dot");
 					FileWriter writer=new FileWriter(f1);
 					PrintWriter pw=new PrintWriter(writer,true);
@@ -80,6 +82,7 @@ public class GLLParsing {
 					}
 					pw.println("}");
 					pw.close();
+					*/
 				}
 				catch(IOException e) {
 					e.printStackTrace();
@@ -104,11 +107,12 @@ public class GLLParsing {
 		//creazione nodo sppf
 		Vertex<IdNodoSppf> cn=sppf.insertVertex(new IdNodoSppf("S"));
 		cn.element().setId(cn.hashCode());
+		op.add(Operazione.creaGoto("$","$"));
 		op.add(Operazione.creaInsertNodeGSS("$"));
 		op.add(Operazione.creaInsertNodeGSS("Ls"+i+"L0"));
 		op.add(Operazione.creaInsertEdgeGSS(gss.getLastNode().element(),u0.element()));
-		op.add(Operazione.creaCurrentToken(i,""+buf[i]));
 		op.add(Operazione.creaInsertNodeSppf(cn.toString()));
+		op.add(Operazione.creaCurrentToken(i,""+buf[i]));
 		while(true){
 			switch(etichetta){
 			//non terminale LL1
@@ -121,7 +125,7 @@ public class GLLParsing {
 				if(test(buf[i],"S","BS")){
 					add("LS2",cu,i,cn);
 				}
-				if(test(buf[i],"S","e")){
+				if((buf[i]=='d')||(buf[i]=='$')) {
 					add("LS3",cu,i,cn);
 				}
 				etichetta="L0";
@@ -152,6 +156,7 @@ public class GLLParsing {
 				if(test(buf[i],"S","ASd")){
 					cu=create("L1",cu,i,cn);
 					cn=getNodeT("ASd",cn);
+					//cn=getNodeT("A",cn);
 					etichetta="LA";
 				}
 				else{
@@ -200,6 +205,7 @@ public class GLLParsing {
 				if(test(buf[i],"S","BS")){
 					cu=create("L3",cu,i,cn);
 					cn=getNodeT("BS",cn);
+					//cn=getNodeT("B",cn);
 					etichetta="LB";
 				}
 				else{
@@ -230,11 +236,11 @@ public class GLLParsing {
 				break;
 			//epsilon
 			case "LS3":
+				op.add(Operazione.creaGoto(etichetta,"S->e*"));
 				pop(cu,i,u0,cn);
 				cn=getNodeT("e",cn);
 				cn=getNodeP("e",cn.hashCode());
 				etichetta="L0";
-				op.add(Operazione.creaGoto(etichetta,"S->e*"));
 				break;
 			//.a
 			case "La":
@@ -375,6 +381,7 @@ public class GLLParsing {
 						return v3;
 					}
 				}
+				*/
 				/*fine extra*/
 				return v1;
 			}
@@ -384,6 +391,7 @@ public class GLLParsing {
 	
 	//ok
 	public static void add(String etichetta, Vertex<String> nu,int j,Vertex<IdNodoSppf>cn){
+		/*
 		if((u.size()==0)&&(r.size()==0)){
 			u.add(new ElementoU(etichetta,nu));
 			r.add(new NewTriplaGss(etichetta,nu,j,cn));
@@ -393,12 +401,13 @@ public class GLLParsing {
 		else{
 			ElementoU el=u.get(j);
 			if(!((el.getEtichetta().equals(etichetta))&&(el.getU().element().equals(nu.element())))){
+				*/
 				u.add(new ElementoU(etichetta,nu));
 				r.add(new NewTriplaGss(etichetta,nu,j,cn));
 				op.add(Operazione.creaInsertUelement(etichetta, nu.element()));
 				op.add(Operazione.creaInsertRelement(etichetta,nu.element(), j,cn.toString()));
-			}
-		}
+			//}
+		//}
 	}
 	
 	public static Vertex<String> create(String etichetta,Vertex<String> u,int j,Vertex<IdNodoSppf>cn){
@@ -476,7 +485,6 @@ public class GLLParsing {
         if(handle.equals("a")&&(x=='a')){return true;}
         if(handle.equals("b")&&(x=='b')){return true;}
         if(handle.equals("c")&&(x=='c')){return true;}
-        if(handle.equals("e")&&(x=='d')){return true;}
 		return false;
         
 	}
