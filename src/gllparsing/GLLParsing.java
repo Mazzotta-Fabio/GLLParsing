@@ -21,9 +21,9 @@ public class GLLParsing {
 	private static Graph<String> gss;
 	//insieme r e u che sono gli insiemi usati per registrare le scelte del non determinismo
 	private static ArrayList<ElementoU> u;
-	private static ArrayList<NewTriplaGss>r;
+	private static ArrayList<DescrittoreR>r;
 	//insieme p
-	private static ArrayList<NewElementoP>p;
+	private static ArrayList<ElementoP>p;
 	//sppf
 	private static Graph<IdNodoSppf> sppf;
 	//insieme usato per le operazioni di logging
@@ -43,9 +43,9 @@ public class GLLParsing {
 					buf=line.toCharArray();
 					gss=new Graph<String>();
 					sppf=new Graph<IdNodoSppf>();
-					r=new ArrayList<NewTriplaGss>();
+					r=new ArrayList<DescrittoreR>();
 					u=new ArrayList<ElementoU>();
-					p=new ArrayList<NewElementoP>();
+					p=new ArrayList<ElementoP>();
 					op=new ArrayList<Operazione>();
 					Date d=new Date();
 					op.add(Operazione.creaParsingInfo("GLLParsing",f.getName(),d.toString()));
@@ -66,23 +66,6 @@ public class GLLParsing {
 					PrintWriter pw3=new PrintWriter(writer2,true);
 					pw3.println(jsonString);
 					pw3.close();
-					/*
-					File f1=new File("grafo.dot");
-					FileWriter writer=new FileWriter(f1);
-					PrintWriter pw=new PrintWriter(writer,true);
-					pw.println("diGraph G {");
-					Iterator<Edge<IdNodoSppf>> iterator=sppf.edges();
-					while(iterator.hasNext()){
-						Edge<IdNodoSppf> e=iterator.next();
-						Vertex<IdNodoSppf> u=e.getStartVertex();
-						Vertex<IdNodoSppf> v=e.getEndVertex();
-						if(!(v.element().getNomeNodo().equals("$"))){
-							pw.println(u.element().toString()+"->"+v.element().toString());
-						}
-					}
-					pw.println("}");
-					pw.close();
-					*/
 				}
 				catch(IOException e) {
 					e.printStackTrace();
@@ -94,7 +77,7 @@ public class GLLParsing {
 		} 
 	}
 	
-	public static String parse(char []buf){
+	private static String parse(char []buf){
 		//dichirazione indici
     	int i=0;
 		//inizializzo etichette
@@ -237,9 +220,9 @@ public class GLLParsing {
 			//epsilon
 			case "LS3":
 				op.add(Operazione.creaGoto(etichetta,"S->e*"));
-				pop(cu,i,u0,cn);
 				cn=getNodeT("e",cn);
 				cn=getNodeP("e",cn.hashCode());
+				pop(cu,i,u0,cn);
 				etichetta="L0";
 				break;
 			//.a
@@ -354,7 +337,7 @@ public class GLLParsing {
 		}
 	}
 	
-	public static Vertex<IdNodoSppf> getNodeT(String item,Vertex<IdNodoSppf>cn){
+	private static Vertex<IdNodoSppf> getNodeT(String item,Vertex<IdNodoSppf>cn){
 		Vertex<IdNodoSppf> v=sppf.insertVertex(new IdNodoSppf(item));
 		v.element().setId(v.hashCode());
 		op.add(Operazione.creaInsertNodeSppf(v.toString()));
@@ -363,7 +346,7 @@ public class GLLParsing {
 		return v;
 	}
 	
-	public static Vertex<IdNodoSppf> getNodeP(String item,int i){
+	private static Vertex<IdNodoSppf> getNodeP(String item,int i){
 		Iterator<Edge<IdNodoSppf>>it=sppf.edges();
 		while(it.hasNext()) {
 			Edge<IdNodoSppf>e=it.next();
@@ -390,27 +373,25 @@ public class GLLParsing {
 	}
 	
 	//ok
-	public static void add(String etichetta, Vertex<String> nu,int j,Vertex<IdNodoSppf>cn){
-		/*
+	private static void add(String etichetta, Vertex<String> nu,int j,Vertex<IdNodoSppf>cn){
 		if((u.size()==0)&&(r.size()==0)){
 			u.add(new ElementoU(etichetta,nu));
-			r.add(new NewTriplaGss(etichetta,nu,j,cn));
+			r.add(new DescrittoreR(etichetta,nu,j,cn));
 			op.add(Operazione.creaInsertUelement(etichetta, nu.element()));
 			op.add(Operazione.creaInsertRelement(etichetta,nu.element(), j,cn.toString()));
 		}
 		else{
 			ElementoU el=u.get(j);
 			if(!((el.getEtichetta().equals(etichetta))&&(el.getU().element().equals(nu.element())))){
-				*/
 				u.add(new ElementoU(etichetta,nu));
-				r.add(new NewTriplaGss(etichetta,nu,j,cn));
+				r.add(new DescrittoreR(etichetta,nu,j,cn));
 				op.add(Operazione.creaInsertUelement(etichetta, nu.element()));
 				op.add(Operazione.creaInsertRelement(etichetta,nu.element(), j,cn.toString()));
-			//}
-		//}
+			}
+		}
 	}
 	
-	public static Vertex<String> create(String etichetta,Vertex<String> u,int j,Vertex<IdNodoSppf>cn){
+	private static Vertex<String> create(String etichetta,Vertex<String> u,int j,Vertex<IdNodoSppf>cn){
 		//creazione del nodo
 		String nomeNodo="Ls"+j+etichetta;
 		Vertex<String> v=null;
@@ -439,7 +420,7 @@ public class GLLParsing {
 		if(flag){
 			gss.insertDirectedEdge(v, u, "");
 			op.add(Operazione.creaInsertEdgeGSS(v.element() ,u.element()));
-			for(NewElementoP elp:p){
+			for(ElementoP elp:p){
 				if(elp.getU().element().equals(v.element())){
 					add(etichetta,u,elp.getK(),elp.getZ());
 				}
@@ -448,11 +429,11 @@ public class GLLParsing {
 		return v;
 	}
 	
-	public static void pop(Vertex<String> u,int j,Vertex<String> u0,Vertex<IdNodoSppf>cn){
+	private static void pop(Vertex<String> u,int j,Vertex<String> u0,Vertex<IdNodoSppf>cn){
 		//if u diverso da u0
 		if(!(u.element().equals(u0.element()))){
 			//mettiamo elemento u,j a p
-			p.add(new NewElementoP(u,j,cn));
+			p.add(new ElementoP(u,j,cn));
 			op.add(Operazione.creaInsertPelement(u.element(),j,cn.toString()));
 			Iterator<Edge<String>> eset=gss.edges();
 			//per ogni figlio v di aggiungi lu,v,j ad r e u
@@ -468,7 +449,7 @@ public class GLLParsing {
 	}
 	
 	//controlla il simbolo buffer corrente di un non terminale 
-	public static boolean test(char x,String nonTerm,String handle){
+	private static boolean test(char x,String nonTerm,String handle){
 		if((first(x,handle))||(first('$',handle)&&(follow(x,nonTerm)))){
 			return true;
 		}
@@ -477,7 +458,7 @@ public class GLLParsing {
 		}
 	}
 	
-	public static boolean first(char x,String handle){
+	private static boolean first(char x,String handle){
 		if((handle.equals("ASd"))&&((x=='a')||(x=='c'))){return true;}
 		if((handle.equals("Sd"))&&((x=='b')||(x=='a')||(x=='d')||(x=='$'))){return true;}
         if((handle.equals("BS"))&&((x=='a')||(x=='b'))){return true;}
@@ -489,7 +470,7 @@ public class GLLParsing {
         
 	}
 		
-	public static boolean follow(char x,String nonTerm){
+	private static boolean follow(char x,String nonTerm){
 		if(nonTerm.equals("S")){
 			switch(x){
 			case '$':return true;

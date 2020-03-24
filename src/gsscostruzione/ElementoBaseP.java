@@ -2,10 +2,10 @@ package gsscostruzione;
 
 import graph.Vertex;
 
-public class ElementoP {
+public class ElementoBaseP {
 	private Vertex<String> u;
 	private int k;
-	public ElementoP(Vertex<String> u, int k) {
+	public ElementoBaseP(Vertex<String> u, int k) {
 		this.u = u;
 		this.k = k;
 	}

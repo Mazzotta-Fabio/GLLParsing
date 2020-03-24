@@ -1,8 +1,9 @@
 package gllparsing;
 
-import graph.Vertex;
+import graph.*;
 
 public class ElementoU {
+	
 	private String etichetta;
 	private Vertex<String> u;
 	public ElementoU(String etichetta, Vertex<String> u) {

@@ -1,16 +1,17 @@
 package gllparsing;
 
-import graph.IdNodoSppf;
-import graph.Vertex;
+import graph.*;
 
-public class NewElementoP {
+public class ElementoP {
+	
 	private Vertex<String> u;
 	private int k;
 	private Vertex<IdNodoSppf> z;
-	public NewElementoP(Vertex<String> u, int k,Vertex<IdNodoSppf>z) {
+	
+	public ElementoP(Vertex<String> u, int k, Vertex<IdNodoSppf>z) {
 		this.u = u;
 		this.k = k;
-		this.z=z;
+		this.z = z;
 	}
 	
 	public Vertex<String> getU() {

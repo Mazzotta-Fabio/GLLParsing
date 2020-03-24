@@ -23,9 +23,9 @@ public class GssTester {
 	private static Graph<String> gss;
 	//insieme r e u che sono gli insiemi usati per registrare le scelte del non determinismo
 	private static ArrayList<ElementoU> u;
-	private static ArrayList<TriplaGSS>r;
+	private static ArrayList<TriplaBaseGSS>r;
 	//insieme p
-	private static ArrayList<ElementoP>p;
+	private static ArrayList<ElementoBaseP>p;
 	
 	public static void main(String []args){
 		File f=new File("file.txt");
@@ -39,9 +39,9 @@ public class GssTester {
 					String line=buffer.nextLine();
 					buf=line.toCharArray();
 					gss=new Graph<String>();
-					r=new ArrayList<TriplaGSS>();
+					r=new ArrayList<TriplaBaseGSS>();
 					u=new ArrayList<ElementoU>();
-					p=new ArrayList<ElementoP>();
+					p=new ArrayList<ElementoBaseP>();
 					String esito=parse(buf);
 					if(esito.equals("SUCCESSO")){
 						File f1=new File("grafo.dot");
@@ -187,13 +187,13 @@ public class GssTester {
 	public static void add(String etichetta, Vertex<String> nu,int j){
 		if((u.size()==0)&&(r.size()==0)){
 			u.add(new ElementoU(etichetta,nu));
-			r.add(new TriplaGSS(etichetta,nu,j));
+			r.add(new TriplaBaseGSS(etichetta,nu,j));
 		}
 		else{
 			ElementoU el=u.get(j);
 			if(!((el.getEtichetta().equals(etichetta))&&(el.getU().element().equals(nu.element())))){
 				u.add(new ElementoU(etichetta,nu));
-				r.add(new TriplaGSS(etichetta,nu,j));
+				r.add(new TriplaBaseGSS(etichetta,nu,j));
 			}
 		}
 	}
@@ -224,7 +224,7 @@ public class GssTester {
 		}
 		if(flag){
 			gss.insertDirectedEdge(v, u, "");
-			for(ElementoP elp:p){
+			for(ElementoBaseP elp:p){
 				if(elp.getU().element().equals(v.element())){
 					add(etichetta,u,elp.getK());
 				}
@@ -238,7 +238,7 @@ public class GssTester {
 		//if u diverso da u0
 		if(!(u.element().equals(u0.element()))){
 			//mettiamo elemento u,j a p
-			p.add(new ElementoP(u,j));
+			p.add(new ElementoBaseP(u,j));
 			Iterator<Edge<String>> eset=gss.edges();
 			//per ogni figlio v di aggiungi lu,v,j ad r e u
 			while(eset.hasNext()){

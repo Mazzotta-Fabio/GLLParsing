@@ -2,11 +2,11 @@ package gsscostruzione;
 
 import graph.Vertex;
 
-public class TriplaGSS {
+public class TriplaBaseGSS {
 	private String etichetta;
 	private Vertex<String> u;
 	private int i;
-	public TriplaGSS(String etichetta, Vertex<String> u, int i) {
+	public TriplaBaseGSS(String etichetta, Vertex<String> u, int i) {
 		this.etichetta = etichetta;
 		this.u=u;
 		this.i = i;

@@ -1,18 +1,19 @@
 package gllparsing;
 
-import graph.IdNodoSppf;
-import graph.Vertex;
+import graph.*;
 
-public class NewTriplaGss {
+public class DescrittoreR {
+	
 	private String etichetta;
 	private Vertex<String> u;
 	private Vertex<IdNodoSppf> w;
 	private int i;
-	public NewTriplaGss(String etichetta, Vertex<String> u, int i,Vertex<IdNodoSppf> w) {
+	
+	public DescrittoreR(String etichetta, Vertex<String> u, int i,Vertex<IdNodoSppf> w) {
 		this.etichetta = etichetta;
-		this.u=u;
+		this.u = u;
 		this.i = i;
-		this.w=w;
+		this.w = w;
 	}
 	
 	public String getEtichetta() {
@@ -22,6 +23,7 @@ public class NewTriplaGss {
 	public Vertex<IdNodoSppf> getW() {
 		return w;
 	}
+	
 	public Vertex<String> getU() {
 		return u;
 	}
@@ -29,6 +31,7 @@ public class NewTriplaGss {
 	public int getI() {
 		return i;
 	}
+	
 	public String toString(){
 		return "<" + etichetta + " , " + u.element() + " , " +i + " , " + w.element() +">";
 	}
