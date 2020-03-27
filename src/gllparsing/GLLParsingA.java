@@ -6,18 +6,24 @@ import java.util.*;
 import com.google.gson.Gson;
 import elementijson.*;
 
+
 /*
  * GRAMMATICA
- * S->adb
- * S->aSb
- * S->d
+  S->ASd
+  S->BS
+  S->epsilon
+  A->a
+  A->c
+  B->a
+  B->b
  */
-public class GLLParsingNew {
+public class GLLParsingA {
 	//gss
 	private static Graph<String> gss;
 	//insieme r e u che sono gli insiemi usati per registrare le scelte del non determinismo
+	private static ArrayList<ElementoU> u;
+	//private static ElementoU []u;
 	private static ArrayList<DescrittoreR>r;
-	private static ElementoU[] u;
 	//insieme p
 	private static ArrayList<ElementoP>p;
 	//sppf
@@ -25,10 +31,10 @@ public class GLLParsingNew {
 	//insieme usato per le operazioni di logging
 	private static List<Operazione> op;
 	
-	private static int i;
+	//private static int i;
 	 
 	public static void main(String []args) {
-		File f=new File("file2.txt");
+		File f=new File("file.txt");
 		File fJson=new File("log.json");
 		Scanner buffer;
 		if(f.exists()){
@@ -42,14 +48,16 @@ public class GLLParsingNew {
 					gss=new Graph<String>();
 					sppf=new Graph<IdNodoSppf>();
 					r=new ArrayList<DescrittoreR>();
-					u=new ElementoU[25000];
+					u=new ArrayList<ElementoU>();
+					//u=new ElementoU[25000];
 					p=new ArrayList<ElementoP>();
 					op=new ArrayList<Operazione>();
 					Date d=new Date();
 					op.add(Operazione.creaParsingInfo("GLLParsing",f.getName(),d.toString()));
 					String esito=parse(buf);
 					System.out.println(esito);
-					System.out.println(i);
+					System.out.println(u.size());
+					//System.out.println(i);
 				}	
 			}
 			catch(Exception e){
@@ -86,7 +94,7 @@ public class GLLParsingNew {
 		gss.insertDirectedEdge(gss.getLastNode(),u0, "");
 		Vertex<String> cu=gss.getLastNode();
 		//creazione nodo sppf
-		Vertex<IdNodoSppf> cn=sppf.insertVertex(new IdNodoSppf("S"));
+		Vertex<IdNodoSppf> cn=sppf.insertVertex(new IdNodoSppf("S","S"));
 		cn.element().setId(cn.hashCode());
 		op.add(Operazione.creaGoto("$","$"));
 		op.add(Operazione.creaInsertNodeGSS("$"));
@@ -100,131 +108,202 @@ public class GLLParsingNew {
 			//S
 			case "LS":
 				op.add(Operazione.creaGoto(etichetta,"S"));
-				if(test(buf[i],"S","adb")){
+				if(test(buf[i],"S","ASd")){
 					add("LS1",cu,i,cn);
 				}
-				if(test(buf[i],"S","aSb")){
+				if(test(buf[i],"S","BS")){
 					add("LS2",cu,i,cn);
 				}
-				if(test(buf[i],"S","d")){
+				if(test(buf[i],"S","epsilon")) {
 					add("LS3",cu,i,cn);
 				}
 				etichetta="L0";
 				break;
-				
-			//.adb
+			//terminale LL1 A
+			case "LA":
+				op.add(Operazione.creaGoto(etichetta,"A"));
+				if(test(buf[i],"A","a")){
+					etichetta="La";
+				}
+				if(test(buf[i],"A","c")){
+					etichetta="Lc";
+				}
+				break;
+			//terminale LL1 B
+			case "LB":
+				op.add(Operazione.creaGoto(etichetta,"B"));
+				if(test(buf[i],"B","a")){
+					etichetta="Lab";
+				}
+				if(test(buf[i],"B","b")){
+					etichetta="Lb";
+				}
+				break;
+			//.ASd
 			case "LS1":
-				op.add(Operazione.creaGoto(etichetta,"S->*adb"));
-				if(buf[i]=='a'){
-					i++;
-					etichetta="Ld1";
-					cn=getNodeT("a",cn);
-					op.add(Operazione.creaCurrentToken(i,""+buf[i]));
+				op.add(Operazione.creaGoto(etichetta,"S->*ASd"));
+				if(test(buf[i],"S","ASd")){
+					cu=create("L1",cu,i,cn);
+					//cn=getNodeT("ASd",cn);
+					cn=getNodeT("A","S->.ASd",cn);
+					etichetta="LA";
 				}
 				else{
 					etichetta="L0";
 				}
 				break;
-			//a.db
-			case "Ld1":
-				op.add(Operazione.creaGoto(etichetta,"S->a*db"));
-				if(buf[i]=='d'){
-					i++;
-					etichetta="Lb1";
-					cn=getNodeP(cn.hashCode());
-					cn=getNodeT("d",cn);
-					op.add(Operazione.creaCurrentToken(i,""+buf[i]));
-				}
-				else{
-					etichetta="L0";
-				}
-				break;
-			//ad.b
-			case "Lb1":
-				op.add(Operazione.creaGoto(etichetta,"S->ad*b"));
-				if(buf[i]=='b'){
-					cn=getNodeP(cn.hashCode());
-					cn=getNodeT("b",cn);
-					i++;
-					etichetta="Labd";
-					op.add(Operazione.creaCurrentToken(i,""+buf[i]));
-				}
-				else{
-					etichetta="L0";
-				}
-				break;
-			//adb.
-			case "Labd":
-				op.add(Operazione.creaGoto(etichetta,"S->adb*"));
-				cn=getNodeP(cn.hashCode());
-				pop(cu,i,u0,cn);
-				etichetta="L0";
-				break;
-			//.aSb
-			case "LS2":
-				op.add(Operazione.creaGoto(etichetta,"S->*aSb"));
-				if(buf[i]=='a'){
-					i++;
-					etichetta="L1";
-					cn=getNodeT("a",cn);
-					op.add(Operazione.creaCurrentToken(i,""+buf[i]));
-				}
-				else{
-					etichetta="L0";
-				}
-				break;
-			//a.Sb
+			//A.Sd
 			case "L1":
-				op.add(Operazione.creaGoto(etichetta,"S->a*Sb"));
-				if(test(buf[i],"S","Sb")) {
+				op.add(Operazione.creaGoto(etichetta,"S->A*Sd"));
+				if(test(buf[i],"S","Sd")){
 					cu=create("L2",cu,i,cn);
-					cn=getNodeP(cn.hashCode());
-					cn=getNodeT("S",cn);
+					cn=getNodeP(cn);
+					cn=getNodeT("S","S->A.Sd",cn);
 					etichetta="LS";
 				}
-				else {
+				else{
 					etichetta="L0";
 				}
 				break;
-			//aS*b
+			//AS.d
 			case "L2":
-				op.add(Operazione.creaGoto(etichetta,"S->aS*b"));
-				if(buf[i]=='b'){
-					cn=getNodeP(cn.hashCode());
-					cn=getNodeT("b",cn);
+				op.add(Operazione.creaGoto(etichetta,"S->AS*d"));
+				if(buf[i]=='d'){
+					cn=getNodeP(cn);
+					cn=getNodeT("d","S->AS.d",cn);
 					i++;
-					etichetta="L3";
+					etichetta="Ld";
 					op.add(Operazione.creaCurrentToken(i,""+buf[i]));
 				}
 				else{
 					etichetta="L0";
 				}
 				break;
-			//aSb*
-			case "L3":
-				op.add(Operazione.creaGoto(etichetta,"S->aSb*"));
-				cn=getNodeP(cn.hashCode());
+			//ASd.
+			case "Ld":
+				op.add(Operazione.creaGoto(etichetta,"S->ASd*"));
+				cn=getNodeP(cn);
 				pop(cu,i,u0,cn);
 				etichetta="L0";
 				break;
-			
-			//.d
+			//.BS
+			case "LS2":
+				op.add(Operazione.creaGoto(etichetta,"S->*BS"));
+				if(test(buf[i],"S","BS")){
+					cu=create("L3",cu,i,cn);
+					//cn=getNodeT("BS",cn);
+					cn=getNodeT("B","S->.BS",cn);
+					etichetta="LB";
+				}
+				else{
+					etichetta="L0";
+				}
+				break;
+			//B.S
+			case "L3":
+				op.add(Operazione.creaGoto(etichetta,"S->B*S"));
+				if(test(buf[i],"S","S")){
+					cu=create("L4",cu,i,cn);
+					cn=getNodeP(cn);
+					cn=getNodeT("S","S->B.S",cn);
+					etichetta="LS";
+				}
+				else{
+					etichetta="L0";
+				}
+				break;
+			//BS.
+			case "L4":
+				op.add(Operazione.creaGoto(etichetta,"S->BS*"));
+				cn=getNodeP(cn);
+				pop(cu,i,u0,cn);
+				etichetta="L0";
+				break;
+			//epsilon
 			case "LS3":
-				op.add(Operazione.creaGoto(etichetta,"S->*d"));
-				if(buf[i]=='d'){
+				op.add(Operazione.creaGoto(etichetta,"S->e*"));
+				cn=getNodeT("e","S->e",cn);
+				cn=getNodeP(cn);
+				pop(cu,i,u0,cn);
+				etichetta="L0";
+				break;
+			//.a
+			case "La":
+				op.add(Operazione.creaGoto(etichetta,"A->*a"));
+				if(buf[i]=='a'){
+					cn=getNodeT("a","A->a",cn);
 					i++;
-					etichetta="Ld";
-					cn=getNodeT("d",cn);
+					etichetta="La1";
 					op.add(Operazione.creaCurrentToken(i,""+buf[i]));
 				}
 				else{
 					etichetta="L0";
 				}
 				break;
-			//d.
-			case "Ld":
-				op.add(Operazione.creaGoto(etichetta,"S->d*"));
-				cn=getNodeP(cn.hashCode());
+			//a.
+			case "La1":
+				op.add(Operazione.creaGoto(etichetta,"A->a*"));
+				cn=getNodeP(cn);
+				pop(cu,i,u0,cn);
+				etichetta="L0";
+				break;
+			//.a
+			case "Lab":
+				op.add(Operazione.creaGoto(etichetta,"B->*a"));
+				if(buf[i]=='a'){
+					cn=getNodeT("a","B->.a",cn);
+					i++;
+					etichetta="La1b";
+					op.add(Operazione.creaCurrentToken(i,""+buf[i]));
+				}
+				else{
+					etichetta="L0";
+				}
+				break;
+			//a.
+			case "La1b":
+				op.add(Operazione.creaGoto(etichetta,"B->a*"));
+				cn=getNodeP(cn);
+				pop(cu,i,u0,cn);
+				etichetta="L0";
+				break;
+			//.b
+			case "Lb":
+				op.add(Operazione.creaGoto(etichetta,"B->*b"));
+				if(buf[i]=='b'){
+					cn=getNodeT("b","B->.b",cn);
+					i++;
+					etichetta="Lb1";
+					op.add(Operazione.creaCurrentToken(i,""+buf[i]));
+				}
+				else{
+					etichetta="L0";
+				}
+				break;
+			//b.
+			case "Lb1":
+				op.add(Operazione.creaGoto(etichetta,"B->b*"));
+				cn=getNodeP(cn);
+				pop(cu,i,u0,cn);
+				etichetta="L0";
+				break;
+			//.c
+			case "Lc":
+				op.add(Operazione.creaGoto(etichetta,"A->*c"));
+				if(buf[i]=='c'){
+					cn=getNodeT("c","A->.c",cn);
+					i++;
+					etichetta="Lc1";
+					op.add(Operazione.creaCurrentToken(i,""+buf[i]));
+				}
+				else{
+					etichetta="L0";
+				}
+				break;
+			//c.
+			case "Lc1":
+				op.add(Operazione.creaGoto(etichetta,"A->c*"));
+				cn=getNodeP(cn);
 				pop(cu,i,u0,cn);
 				etichetta="L0";
 				break;
@@ -240,13 +319,13 @@ public class GLLParsingNew {
 					r.remove(0);
 				}
 				else{
-					if(u[i]==null){
+					if(u.size()==0) {//if(u[i]==null) {
 						op.add(Operazione.creaInformazione("failure_parse"));
 						return "NON SUCCESSO";
 					}
 					else{
-						if((u[i].getEtichetta().equals("L0"))&&(u[i].getU().element().equals(u0.element()))){//if((u.get(u.size()-1).getEtichetta().equals("L0"))&&(u.get(u.size()-1).getU().element().equals(u0.element()))){
-							op.add(Operazione.creaInformazione("success_parse"));
+						//if((u[i].getEtichetta().equals("L0"))&&(u[i].getU().element().equals(u0.element()))){
+						if((u.get(u.size()-1).getEtichetta().equals("L0"))&&(u.get(u.size()-1).getU().element().equals(u0.element()))){
 							return "SUCCESSO";
 						}
 						else{
@@ -260,47 +339,79 @@ public class GLLParsingNew {
 		}
 	}
 	
-	private static Vertex<IdNodoSppf> getNodeT(String item,Vertex<IdNodoSppf>cn){
-		Vertex<IdNodoSppf> v=sppf.insertVertex(new IdNodoSppf(item));
-		v.element().setId(v.hashCode());
-		op.add(Operazione.creaInsertNodeSppf(v.toString()));
-		sppf.insertDirectedEdge(cn, v, null);
-		op.add(Operazione.creaInsertEdgeSppf(cn.toString(),v.toString()));
-		return v;
+	private static Vertex<IdNodoSppf> getNodeT(String simbolo,String item,Vertex<IdNodoSppf>cn){
+		Iterator<Edge<IdNodoSppf>>it=sppf.edges();
+		boolean flag=true;
+		while(it.hasNext()) {
+			Edge<IdNodoSppf>e=it.next();
+			Vertex<IdNodoSppf> v1=e.getStartVertex();
+			Vertex<IdNodoSppf> v2=e.getEndVertex();
+			if( (cn.element().getId()==v1.element().getId())&&(item.equals(v2.element().getItem())) ) {
+				flag=false;
+			}
+		}
+		if(flag) {
+			Vertex<IdNodoSppf> v=sppf.insertVertex(new IdNodoSppf(simbolo,item));
+			v.element().setId(v.hashCode());
+			op.add(Operazione.creaInsertNodeSppf(v.toString()));
+			sppf.insertDirectedEdge(cn, v, null);
+			op.add(Operazione.creaInsertEdgeSppf(cn.toString(),v.toString()));
+			return v;
+		}
+		return cn;
 	}
 	
-	private static Vertex<IdNodoSppf> getNodeP(int i){
+	private static Vertex<IdNodoSppf> getNodeP(Vertex<IdNodoSppf>cn){
 		Iterator<Edge<IdNodoSppf>>it=sppf.edges();
 		while(it.hasNext()) {
 			Edge<IdNodoSppf>e=it.next();
 			Vertex<IdNodoSppf> v1=e.getStartVertex();
 			Vertex<IdNodoSppf> v2=e.getEndVertex();
-			if(v2.element().getId()==i) {
+			if(v2.element().getId()==cn.element().getId()) {
+				/*extra*/
+				/*
+				Iterator<Edge<IdNodoSppf>>it2=sppf.edges();
+				while(it2.hasNext()) {
+					Edge<IdNodoSppf>e2=it2.next();
+					Vertex<IdNodoSppf> v3=e2.getStartVertex();
+					Vertex<IdNodoSppf> v4=e2.getEndVertex();
+					if(v4.element().getId()==v1.element().getId()) {
+						return v3;
+					}
+				}
+				*/
+				/*fine extra*/
 				return v1;
 			}
 		}
-		return null;
+		return cn;
 	}
 	
 	//ok
 	private static void add(String etichetta, Vertex<String> nu,int j,Vertex<IdNodoSppf>cn){
-		ElementoU el=u[j];
-		if(el==null) {
-			u[j]=new ElementoU(etichetta,nu);
-			i++;
+		//ElementoU el=u[j];
+		/*
+		if((u.size()==0)||(r.size()==0)){//if(el==null) {
+			//u[j]=new ElementoU(etichetta,nu);
+			//i++;
+			u.add(new ElementoU(etichetta,nu));
 			r.add(new DescrittoreR(etichetta,nu,j,cn));
 			op.add(Operazione.creaInsertUelement(etichetta, nu.element()));
 			op.add(Operazione.creaInsertRelement(etichetta,nu.element(), j,cn.toString()));
 		}
 		else {
+			ElementoU el=u.get(j);
 			if(!((el.getEtichetta().equals(etichetta))&&(el.getU().element().equals(nu.element())))){
-				u[j]=new ElementoU(etichetta,nu);
-				i++;
+				//u[j]=new ElementoU(etichetta,nu);
+				//i++;
+				 * 
+				 */
+				u.add(new ElementoU(etichetta,nu));
 				r.add(new DescrittoreR(etichetta,nu,j,cn));
 				op.add(Operazione.creaInsertUelement(etichetta, nu.element()));
 				op.add(Operazione.creaInsertRelement(etichetta,nu.element(), j,cn.toString()));
-			}
-		}
+			//}
+		//}
 	}
 	
 	private static Vertex<String> create(String etichetta,Vertex<String> u,int j,Vertex<IdNodoSppf>cn){
@@ -371,10 +482,14 @@ public class GLLParsingNew {
 	}
 	
 	private static boolean first(char x,String handle){
-		if((handle.equals("adb"))&&((x=='a')||(x=='d'))){return true;}
-		if(handle.equals("d")&&(x=='d')){return true;}
-        if((handle.equals("aSb"))&&((x=='a')||(x=='d'))){return true;}
-        if((handle.equals("Sb"))&&((x=='a')||(x=='d'))){return true;}
+		if((handle.equals("ASd"))&&((x=='a')||(x=='c'))){return true;}
+		if((handle.equals("Sd"))&&((x=='d')||(x=='a')||(x=='b'))){return true;}
+        if((handle.equals("BS"))&&((x=='a')||(x=='b'))){return true;}
+        if((handle.equals("S"))&&((x=='a')||(x=='c')||(x=='d')||(x=='$'))){return true;}
+        if(handle.equals("a")&&(x=='a')){return true;}
+        if(handle.equals("b")&&(x=='b')){return true;}
+        if(handle.equals("c")&&(x=='c')){return true;}
+        if(handle.equals("epsilon")&&((x=='d')||(x=='$'))){return true;}
 		return false;
         
 	}
@@ -384,6 +499,23 @@ public class GLLParsingNew {
 			switch(x){
 			case '$':return true;
 			case 'd':return true;
+			}
+		}
+		if(nonTerm.equals("A")){
+			switch(x){
+			case 'a':return true;
+			case 'b':return true;
+			case 'c':return true;
+			case 'd':return true;
+			}
+		}
+		if(nonTerm.equals("B")){
+			switch(x){
+			case 'a':return true;
+			case 'b':return true;
+			case 'c':return true;
+			case 'd':return true;
+			case '$':return true;
 			}
 		}
 		return false;
