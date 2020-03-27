@@ -17,7 +17,7 @@ import elementijson.*;
   B->a
   B->b
  */
-public class GLLParsingA {
+public class GLLParsing {
 	//gss
 	private static Graph<String> gss;
 	//insieme r e u che sono gli insiemi usati per registrare le scelte del non determinismo
