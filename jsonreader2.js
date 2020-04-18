@@ -641,7 +641,7 @@ function parsing_info(obj) {
     		removeSelectionsInputAndInputFile();
     	}
     });
-    new ClickDecoration(cur_token_textentry, cur_token_clickconsumer, initializer);
+    new ClickDecoration(cur_token_textentry, , initializer);
     
     cur_lalr_state_Select = new TextStyle(lalr_states[0], cupdumpTextStyleCurrentLalr, true, initializer);
 }

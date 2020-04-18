@@ -21,8 +21,9 @@ var u = new Graph("U", TreeLayouter.NAME);
 var pElements = [];
 var p = new Graph("P", TreeLayouter.NAME);
 var stateElements = [];
-var states = new Graph("States", TreeLayouter.NAME);
+var states = new Graph("Current State", TreeLayouter.NAME);
 var inputfile= new Text("Input File");
+var dumpfile = new Text("Dump File");
 var inputfileElements=[];
 var sppfNodes = [];
 var sppf = new Graph("Sppf", TreeLayouter.NAME);
@@ -34,6 +35,13 @@ var coarseLevel = new DetailLevel("Coarse");
 var lastErrorRecovery = null;
 var lastStep = null;
 var lastStepActStart = null;
+
+var initializer = null;
+
+var defaultTextStyle = "header";
+var inputFileElements = [];
+var inputTextSyleRead = "headerred";
+var statesGoto = [];
 
 //creazione nodo
 function initialPos(graph, refNodes) {
@@ -67,31 +75,58 @@ function parsing_info(obj){
     events.addGraph(p);
     events.addGraph(states);
     events.addGraph(sppf);
+    
+    events.addText(dumpfile);
     events.addText(inputfile);
     
     events.addConfig(stdLabel);
     events.addConfig(fineLevel);
     events.addConfig(coarseLevel); 
     
+    initializer = CompositeEvent.makeAuto("Init", 1, events.getRoot());
     loadtextinputfile(new java.io.File(currentFile.getParentFile(), obj.inputfile));
+    loadtextdumpfile(new java.io.File(currentFile.getParentFile(), obj.dumpfile));
 }
 
-function goto(obj){
+
+function loadtextdumpfile(dumpfiletext){
+	var lines = java.nio.file.Files.readAllLines(dumpfiletext.toPath());
+	var index = 0;
+	for(var i = 0; i < lines.size(); i++) {
+		var line = lines.get(i) + "\n";
+		if(line.includes("State: $")){
+			var t = new TextEntry(-1, line,"headerred",dumpfile);
+		}
+		else{
+			var t= new TextEntry(-1, line,"header",dumpfile);
+		}
+		if(line.includes("State")){
+			statesGoto[index] = line;
+			inputFileElements.push(t);
+			index++;
+		}
+	}
+}
+
+function set_state(obj){
 	var ce = newStepCompositeEvent(obj);
 	var descr=obj.to_state+" "+obj.item;
 	var n = new Node(descr, states, initialPos(states, stateElements.length > 0 ? [stateElements[stateElements.length - 1]] : []), ce);
+	n.addDecoration(new TooltipDecoration(n, fineLevel, "<html>LabelState: "+obj.to_state+"<br>Item: "+obj.item+"<\html>",null));
 	new NodeColor(n,Color.CYAN, ce);
 	new NodeLabel(fineLevel, n, descr, stdLabel, ce);
 	if(stateElements.length>0){
 		new Delete(stateElements.shift(), ce);
 	}
 	stateElements.push(n);
+	change_state(obj.to_state,ce);
 }
 
 function insert_gss_node(obj){
 	var ce = newActionCompositeEvent(obj);
 	var descr = obj.parse_state;
 	n = new Node(descr, gss, initialPos(gss, gssNodes.length > 0 ? [gssNodes[gssNodes.length - 1]] : []), ce);
+	n.addDecoration(new TooltipDecoration(n, fineLevel, "GSSNodeState: "+obj.parse_state,null));
 	new NodeColor(n,Color.YELLOW, ce);
 	new NodeLabel(fineLevel, n, descr, stdLabel, ce);
 	gssNodes[obj.parse_state]=n;
@@ -106,8 +141,10 @@ function insert_gss_edge(obj){
 
 function insert_r_element(obj){
 	var ce = newActionCompositeEvent(obj);
-	var descr = obj.label+" "+obj.nameNode+" "+obj.i+" "+(obj.nameNodeSppf).replace(/[0-9]/g,'');;
+	var nameNodeSppf = (obj.nameNodeSppf).replace(/[0-9]/g,'');
+	var descr = obj.label+" "+obj.nameNode+" "+obj.i+" "+nameNodeSppf;
 	var n = new Node(descr, r, initialPos(r, rElements.length > 0 ? [rElements[rElements.length - 1]] : []), ce);
+	n.addDecoration(new TooltipDecoration(n, fineLevel, "<html>LabelState: "+obj.label+"<br> NodeGSS: "+obj.nameNode+"<br> InputPosition: "+obj.i+"<br> NodeSppf: "+nameNodeSppf+"<\html>",null));
 	new NodeColor(n,Color.ORANGE, ce);
 	new NodeLabel(fineLevel, n, descr, stdLabel, ce);
 	rElements.push(n);
@@ -115,7 +152,16 @@ function insert_r_element(obj){
 	    var e = new Edge(n, rElements[rElements.length - 2], r, ce);
 	    new EdgeStyle(e, Color.BLACK, ce);
 	}
+	//non funziona
+	new ClickDecoration(n,new Consumer({
+		accept: function (e) {
+			var textFrame = app.getTextFrame(r);
+			var del = new Delete(rElements.shift(),ce);
+			textFrame.notify(del,true);
+		}
+	}), initializer);
 }
+
 function remove_r_element(obj){
 	var ce = newActionCompositeEvent(obj);
 	new Delete(rElements.shift(), ce);
@@ -125,6 +171,7 @@ function insert_u_element(obj){
 	var ce = newActionCompositeEvent(obj);
 	var descr = obj.label+" "+obj.nameNode;
 	var n = new Node(descr, u, initialPos(u, uElements.length > 0 ? [uElements[uElements.length - 1]] : []), ce);
+	n.addDecoration(new TooltipDecoration(n, fineLevel, "<html>LabelState: "+obj.label+"<br> GSSNode: "+obj.nameNode+"<\html>",null));
 	new NodeColor(n,Color.GREEN, ce);
 	new NodeLabel(fineLevel, n, descr, stdLabel, ce);
 	uElements.push(n);
@@ -134,10 +181,16 @@ function insert_u_element(obj){
 	}
 }
 
+function getnodep(obj){
+	var ce = newActionCompositeEvent(obj);
+}
+
 function insert_p_element(obj){
 	var ce = newActionCompositeEvent(obj);
-	var descr=obj.nameNode+" "+obj.i+" "+obj.nameNodeSppf.replace(/[0-9]/g,'');
+	var nameNodeSppf = obj.nameNodeSppf.replace(/[0-9]/g,'');
+	var descr=obj.nameNode+" "+obj.i+" "+nameNodeSppf;
 	var n = new Node(descr, p, initialPos(p, pElements.length > 0 ? [pElements[pElements.length - 1]] : []), ce);
+	n.addDecoration(new TooltipDecoration(n, fineLevel, "<html> GSSNode: "+obj.nameNode+"<br>PositionInput: "+obj.i+"<br>SppfNode: "+nameNodeSppf+"<\html>",null));
 	new NodeColor(n,Color.ORANGE, ce);
 	new NodeLabel(fineLevel, n, descr, stdLabel, ce);
 	pElements.push(n);
@@ -154,39 +207,36 @@ function loadtextinputfile(fileinput) {
 		var lnte = new TextEntry(-1, carattere,"header",inputfile);
 		inputfileElements.push(lnte);
 	}
-	/*
-	var lines = java.nio.file.Files.readAllLines(inputfile.toPath());
-	inputFileTextEntries = new Array(lines.size());
-	inputFileTextStyles = new Array(lines.size());
-	var nlines = "" + lines.size();
-    for(var i = 0; i < lines.size(); i++) {
-    	var ln = "" + (i + 1);
-    	if(linesNumbersTextStyle) {
-	    	var lnte = new TextEntry(-1, "\u2007".repeat((nlines.length - ln.length)) + ln + "\u2003", linesNumbersTextStyle, textinputfile);
-	        new ClickDecoration(lnte, inputFileClickSelector(lnte, i + 1, 1), initializer);
-    	}
+}
 
-    	var line = lines.get(i) + (ln == nlines ? "" : "\n");
-    	inputFileTextEntries[i] = new Array(line.lenght);
-    	inputFileTextStyles[i] = new Array(line.lenght);
-        for(var j = 0; j < line.length; j++) {
-        	inputFileTextEntries[i][j] = new TextEntry(-1, line.substring(j, j + 1), defaultTextStyle, textinputfile);
-            new ClickDecoration(inputFileTextEntries[i][j], inputFileClickSelector(inputFileTextEntries[i][j], i + 1, j + 1), initializer);
-        }
-    }
-    */
+function goto(obj){
+	var ce = newActionCompositeEvent(obj);
+}
+
+function change_state(state,compositeEvent){
+	for(var i = 0; i < inputFileElements.length; i++){
+		var arr = statesGoto[i].split(" ");
+		if(arr[2]==state){
+			new TextStyle(inputFileElements[i], inputTextSyleRead ,compositeEvent);
+		}
+		else{
+			new TextStyle(inputFileElements[i],defaultTextStyle,compositeEvent);
+		}
+	}
 }
 
 function insert_sppf_node(obj){
 	var ce = newActionCompositeEvent(obj);
-	var descr=(obj.parse_state).replace(/[0-9]/g,'');
+	var descr=(obj.parse_state).replace(/[0-9]/g,'')+" ["+obj.item+"]";
 	n = new Node(descr, sppf, initialPos(sppf, sppfNodes.length > 0 ? [sppfNodes[sppfNodes.length - 1]] : []), ce);
 	var expr = /^[a-z()+]/;
 	if(expr.test(descr)){
 		new NodeColor(n,Color.ORANGE, ce);
+		n.addDecoration(new TooltipDecoration(n, fineLevel, "<html> TerminalNode <br> NameNode: "+(obj.parse_state).replace(/[0-9]/g,'')+"<br> Item: "+obj.item+"<\html>",null));
 	}
 	else{
 		new NodeColor(n,Color.GREEN, ce);
+		n.addDecoration(new TooltipDecoration(n, fineLevel, "<html> NonTerminalNode <br> NameNode: "+(obj.parse_state).replace(/[0-9]/g,'')+"<br> Item: "+obj.item+"<\html>",null));
 	}
 	new NodeLabel(fineLevel, n, descr, stdLabel, ce);
 	sppfNodes[obj.parse_state]=n;
@@ -199,22 +249,24 @@ function insert_sppf_edge(obj){
 	new EdgeStyle(e, Color.BLACK, ce);
 }
 
-function current_token(obj){
-	var descr=obj.value+" "+obj.id;
-	var ce=new CompositeEvent("current_token "+descr, 1, events.getRoot());
+function set_current_token(obj){
+	var ce = newActionCompositeEvent(obj);
 	var sel = new Select(inputfileElements[obj.id], ce);
 }
 
 function failure_parse(obj){
-	var ce=new CompositeEvent(obj.op, 1, events.getRoot());
+	var ce = newActionCompositeEvent(obj);
+	events.addAttribute(new Attribute("Result", obj.op));
 }
 
 function success_parse(obj){
-	var ce=new CompositeEvent(obj.op, 1, events.getRoot());
+	var ce = newActionCompositeEvent(obj);
+	events.addAttribute(new Attribute("Result", obj.op));
 }
 
 function error_parse(obj){
-	var ce=new CompositeEvent(obj.op, 1, events.getRoot());
+	var ce= newActionCompositeEvent(obj);
+	events.addAttribute(new Attribute("Result", obj.op));
 }
 
 function newActionCompositeEvent(op, autoop) {
@@ -230,15 +282,26 @@ function newCompositeEvent(logText, granularity, parent, autoop) {
 }
 
 function opToString(obj) {
-	var res = obj.op;
-	for (var key in obj) {
-		if(((obj.op == "insert_p_element")||(obj.op == "insert_sppf_edge")||(obj.op == "insert_sppf_node")||(obj.op == "insert_r_element"))&&((key=="parse_state")||(key == "nameNodeSppf")||(key == "u")||(key == "v"))){
-			res += " " + ((JSON.stringify(obj[key])).replace(/[0-9]/g,''));
+	var res;
+	if(obj.op == "set_state"){
+		res = "state";
+	}
+	else{
+		if(obj.callFunction != undefined){
+			res = obj.callFunction + ": " + obj.op;
 		}
 		else{
-			if(key != "op"){
-				res += " " + JSON.stringify(obj[key]);
+			if(obj.op == "remove_r_element"){
+				res = obj.op;
 			}
+			else{
+				res = obj.op + ":";
+			}
+		}
+	}
+	for (var key in obj) {
+		if((key != "op")&&(key != "callFunction")){
+			res += " " + JSON.stringify(obj[key]);
 		}
 	}
 	return res.replace(/"/g,'');
