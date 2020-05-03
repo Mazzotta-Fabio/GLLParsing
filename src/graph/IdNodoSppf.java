@@ -9,6 +9,7 @@ public class IdNodoSppf {
 		this.nomeNodo = nomeNodo;
 		this.item = item;
 	}
+		
 	public String getItem() {
 		return item;
 	}
@@ -16,7 +17,7 @@ public class IdNodoSppf {
 	public String getNomeNodo() {
 		return nomeNodo;
 	}
-	
+		
 	public int getId() {
 		return id;
 	}
@@ -24,7 +25,10 @@ public class IdNodoSppf {
 	public void setId(int id) {
 		this.id = id;
 	}
+	
 	public String toString() {
-		return (nomeNodo+id).substring(0,10);
+		String idNodo=""+id;
+		String i=idNodo.substring(0,4);
+		return (nomeNodo+i);
 	}
 }

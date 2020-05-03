@@ -1,0 +1,22 @@
+{
+  "jsonTokens": [
+    {
+      "start": true,
+      "type": "START" ,
+      "AttachPoints": ["a"]
+    },
+    {
+      "type": "PREDICATE" ,
+      "AttachPoints": ["a","L3","L2"]
+    },
+    {
+      "type": "INSTRUCTION" ,
+      "AttachPoints": ["L3","a"]
+    },
+    {
+      "type": "END" ,
+      "AttachPoints": ["L2"]
+    }
+    
+  ]
+}

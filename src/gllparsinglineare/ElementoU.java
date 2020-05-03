@@ -1,4 +1,4 @@
-package gllparsing;
+package gllparsinglineare;
 
 import graph.*;
 

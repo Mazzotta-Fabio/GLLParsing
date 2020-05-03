@@ -1,0 +1,49 @@
+{
+  "jsonTokens": [
+    {
+      "start": true,
+      "type": "START" ,
+      "AttachPoints": ["a"]
+    },
+    {
+      "type": "INSTRUCTION" ,
+      "AttachPoints": ["L3","L4"]
+    },
+    {
+      "type": "INSTRUCTION" ,
+      "AttachPoints": ["a","L3"]
+    },
+    {
+      "type": "INSTRUCTION" ,
+      "AttachPoints": ["L4","L5"]
+    },
+    {
+      "type": "INSTRUCTION" ,
+      "AttachPoints": ["L5","L9"]
+    },
+    {
+      "type": "INSTRUCTION" ,
+      "AttachPoints": ["L9","L60"]
+    },
+     {
+      "type": "INSTRUCTION" ,
+      "AttachPoints": ["L60","L30"]
+    },
+     {
+      "type": "INSTRUCTION" ,
+      "AttachPoints": ["L30","L10"]
+    },
+     {
+      "type": "INSTRUCTION" ,
+      "AttachPoints": ["L10","L89"]
+    },
+    {
+      "type":"INSTRUCTION",
+       "AttachPoints": ["L89","b"]
+    },
+	{
+      "type": "END" ,
+      "AttachPoints": ["b"]
+    }
+  ]
+}

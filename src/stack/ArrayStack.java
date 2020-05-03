@@ -9,7 +9,7 @@ public class ArrayStack<E> implements Stack<E> {
 	private E S[];
 	private int top = -1;
 	
-	public static final int CAPACITY = 1000;
+	public static final int CAPACITY = 500000;
 	
 	public ArrayStack(){
 		this(CAPACITY);

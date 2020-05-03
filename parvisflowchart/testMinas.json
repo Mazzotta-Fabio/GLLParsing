@@ -1,0 +1,50 @@
+{
+  "jsonTokens": [
+    {
+      "start": true,
+      "type": "START" ,
+      "AttachPoints": ["a"]
+    },
+    {
+      "type": "PREDICATE" ,
+      "AttachPoints": ["f","g","m"]
+    },
+    {
+      "type": "PREDICATE" ,
+      "AttachPoints": ["a","b","c"]
+    },
+    {
+      "type": "PREDICATE" ,
+      "AttachPoints": ["d","e","l"]
+    },
+    {
+      "type": "INSTRUCTION" ,
+      "AttachPoints": ["e","d"]
+    },
+    {
+      "type": "INSTRUCTION" ,
+      "AttachPoints": ["l","f"]
+    },
+    {
+      "type": "INSTRUCTION" ,
+      "AttachPoints": ["g","h"]
+    },
+    {
+      "type": "INSTRUCTION" ,
+      "AttachPoints": ["m","h"]
+    },
+    {
+      "type": "END" ,
+      "AttachPoints": ["h"]
+    },
+    {
+      "type": "INSTRUCTION" ,
+      "AttachPoints": ["c","f"]
+    },
+    {
+      "type": "INSTRUCTION" ,
+      "AttachPoints": ["b","d"]
+    }
+    
+  ]
+}

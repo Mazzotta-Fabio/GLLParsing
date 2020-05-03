@@ -1,0 +1,38 @@
+{
+  "jsonTokens": [
+    {
+      "start": true,
+      "type": "START" ,
+      "AttachPoints": ["a"]
+    },
+    {
+      "type": "PREDICATE" ,
+      "AttachPoints": ["a","L3","L2"]
+    },
+    {
+      "type": "INSTRUCTION" ,
+      "AttachPoints": ["L3","a"]
+    },
+    {
+      "type": "PREDICATE" ,
+      "AttachPoints": ["L2","L4","L5"]
+    },
+    {
+      "type": "INSTRUCTION" ,
+      "AttachPoints": ["L4","L6"]
+    },
+    {
+      "type": "INSTRUCTION" ,
+      "AttachPoints": ["L6","L7"]
+    },
+    {
+      "type": "INSTRUCTION" ,
+      "AttachPoints": ["L5","L7"]
+    },
+    {
+      "type": "END" ,
+      "AttachPoints": ["L7"]
+    }
+    
+  ]
+}

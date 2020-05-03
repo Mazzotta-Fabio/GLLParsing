@@ -1,0 +1,25 @@
+======== Terminals ========
+[0]a [1]d [2]b [3]$
+
+======== Non Terminals ========
+[0]S
+
+======== Productions ========
+[0] S ::= adb
+[1] S ::= aSb
+[2] S ::= d
+
+======== States ========
+[1] State: $ - Item: $
+[2] State: LS - Item: S
+[3] State: LS1 - Item: S ::= *adb
+[4] State: Ld1 - Item: S ::= a*db
+[5] State: Lb1 - Item: S ::= ad*b
+[6] State: Ladb - Item: S ::= adb*
+[7] State: LS2 - Item: S ::= *aSb
+[8] State: L1 - Item: S ::= a*Sb
+[9] State: L2 - Item: S ::= aS*b
+[10] State: L3 - Item: S ::= aSb*
+[11] State: LS3 - Item: S ::= *d
+[12] State: Ld - Item: S ::= d*
+[13] State: L0 - Item: S0

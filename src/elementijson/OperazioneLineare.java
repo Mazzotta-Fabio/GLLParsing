@@ -50,11 +50,12 @@ public abstract class OperazioneLineare {
 	public static class Operazione7 extends OperazioneLineare {
 		private String u;
 		private String v;
-
-		public Operazione7(String op, String callFunction, String u, String v) {
+		private int id;
+		public Operazione7(String op, String callFunction, String u, String v,int id) {
 			super(op, callFunction);
 			this.u = u;
 			this.v = v;
+			this.id = id;
 		}
 	}
 
@@ -72,20 +73,35 @@ public abstract class OperazioneLineare {
 	public static class Operazione11 extends OperazioneLineare {
 		private String parse_state;
 		private String item;
-
-		public Operazione11(String op, String callFunction, String parse_state, String item) {
+		private boolean mark;
+		private int id;
+		private int idNodo;
+		public Operazione11(String op, String callFunction, String parse_state, String item,int id,int idNodo) {
 			super(op, callFunction);
 			this.parse_state = parse_state;
 			this.item = item;
+			this.id=id;
+			this.idNodo=idNodo;
+			mark=false;
+		}
+		public void setMark() {
+			mark=true;
+		}
+		public String getItem() {
+			return item;
+		}
+		public int  getIdNodo() {
+			return idNodo;
 		}
 	}
 
 	public static class Operazione27 extends OperazioneLineare {
 		private String parse_state;
-
-		public Operazione27(String op, String callFunction, String parse_state) {
+		private int id;
+		public Operazione27(String op, String callFunction, String parse_state,int id) {
 			super(op, callFunction);
 			this.parse_state = parse_state;
+			this.id=id;
 		}
 	}
 
@@ -94,23 +110,26 @@ public abstract class OperazioneLineare {
 		private String nameNode;
 		private int i;
 		private String nameNodeSppf;
-
-		public Operazione12(String op, String callFunction, String label, String nameNode, int i, String nameNodeSppf) {
+		private int id;
+		public Operazione12(String op, String callFunction, String label, String nameNode, int i, String nameNodeSppf,int id) {
 			super(op, callFunction);
 			this.label = label;
 			this.nameNode = nameNode;
 			this.i = i;
 			this.nameNodeSppf = nameNodeSppf;
+			this.id = id;
 		}
 	}
 
 	public static class Operazione13 extends OperazioneLineare {
 		private String label;
 		private String nameNode;
-		public Operazione13(String op, String callFunction, String label, String nameNode) {
+		private int id;
+		public Operazione13(String op, String callFunction, String label, String nameNode,int id) {
 			super(op, callFunction);
 			this.label = label;
 			this.nameNode = nameNode;
+			this.id = id;
 		}
 	}
 
@@ -164,35 +183,35 @@ public abstract class OperazioneLineare {
 		return new Operazione4("set_current_token", id, value);
 	}
 
-	public static Operazione7 creaInsertEdgeGSS(String u, String v) {
-		return new Operazione7("insert_gss_edge", "create", u, v);
+	public static Operazione7 creaInsertEdgeGSS(String u, String v,int id) {
+		return new Operazione7("insert_gss_edge", "create", u, v,id);
 	}
 
 	public static Operazione8 creaStato(String to_state, String item) {
 		return new Operazione8("set_state", to_state, item);
 	}
 
-	public static Operazione27 creaInsertNodeGSS(String parse_state) {
-		return new Operazione27("insert_gss_node", "create", parse_state);
+	public static Operazione27 creaInsertNodeGSS(String parse_state,int id) {
+		return new Operazione27("insert_gss_node", "create", parse_state,id);
 	}
 
-	public static Operazione12 creaInsertRelement(String label, String nameNode, int i, String nameNodeSppf) {
-		return new Operazione12("insert_r_element", "add", label, nameNode, i, nameNodeSppf);
+	public static Operazione12 creaInsertRelement(String label, String nameNode, int i, String nameNodeSppf,int id) {
+		return new Operazione12("insert_r_element", "add", label, nameNode, i, nameNodeSppf,id);
 	}
 
-	public static Operazione13 creaInsertUelement(String label, String nameNode) {
-		return new Operazione13("insert_u_element", "add", label, nameNode);
+	public static Operazione13 creaInsertUelement(String label, String nameNode,int id) {
+		return new Operazione13("insert_u_element", "add", label, nameNode, id);
 	}
 
 	public static Operazione14 creaInsertPelement(String nameNode, int i, String nameNodeSppf) {
 		return new Operazione14("insert_p_element", "pop", nameNode, i, nameNodeSppf);
 	}
 
-	public static Operazione11 creaInsertNodeSppf(String parse_state, String item) {
-		return new Operazione11("insert_sppf_node", "getnodet", parse_state, item);
+	public static Operazione11 creaInsertNodeSppf(String parse_state, String item,int id,int idNodo) {
+		return new Operazione11("insert_sppf_node", "getnodet", parse_state, item,id,idNodo);
 	}
 
-	public static Operazione7 creaInsertEdgeSppf(String u, String v) {
-		return new Operazione7("insert_sppf_edge", "getnodet", u, v);
+	public static Operazione7 creaInsertEdgeSppf(String u, String v,int id) {
+		return new Operazione7("insert_sppf_edge", "getnodet", u, v,id);
 	}
 }

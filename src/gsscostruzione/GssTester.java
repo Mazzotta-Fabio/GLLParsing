@@ -1,12 +1,9 @@
 package gsscostruzione;
 
-
 import graph.*;
-
 import java.io.*;
 import java.util.*;
-
-import gllparsing.ElementoU;
+import gllparsinglineare.*;
 
 /*
  * GRAMMATICA
@@ -28,7 +25,7 @@ public class GssTester {
 	private static ArrayList<ElementoBaseP>p;
 	
 	public static void main(String []args){
-		File f=new File("file.txt");
+		File f=new File("parvislineare/filelineare.txt");
 		Scanner buffer;
 		if(f.exists()){
 			try{

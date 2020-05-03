@@ -1,0 +1,61 @@
+======== Terminals ========
+[0] START(AttachPoint:1)
+[1] INSTRUCTION(AttachPoint:2)
+[2] PREDICATE(AttachPoint:3)
+[3] END(AttachPoint:1)
+
+======== Non Terminals ========
+[0] Program()
+[1]	Statement(AttachPoint:2)
+[2]	Statements(AttachPoint:2)
+
+======== Moviments ========
+[0] link(AttachPoint,AttachPoint);
+[1]	nolink(AttachPoint,AttachPoint);
+
+======== Productions ========
+[0] Program ::= START link(1,1) Statements link(2,1) END
+[1] Statements ::= Statement link(2,1) Statements { $$.1 = $1.1; $$.2 = $2.2; }
+[2] Statements ::= Statement { $$.1 = $1.1; $$.2 = $1.2; }
+[3] Statement ::= INSTRUCTION { $$.1 = $1.1; $$.2 = $1.2; }
+[4] Statement ::= PREDICATE link(2,1) ^ link(3,2) Statements { $$.1 = $1.1; $$.2 = $2.2; }
+[5] Statement ::= PREDICATE link(2,1) ^ nolink(1,2) Statements link(3,1)(-1) ^ link(2,2) Statements { $$.1 = $1.1; $$.2 = $2.2; }
+[6] Statement ::= PREDICATE link(2,1) ^ link(1,2) Statements { $$.1 = $1.1; $$.2 = $1.3; }
+
+======== States ========
+[0] State: $ Item: $
+[1] State: LPROGRAM Item: Program ::= *START link(1.1) Statements link(2,1) END
+[2] State: L1 Item: Program ::= START *link(1,1) Statements link(2,1) END
+[3] State: LSTATS Item: Program ::= START link(1,1) *Statements link(2,1) END
+[4] State: L2 Item: Program ::= START link(1,1) Statements *link(2,1) END
+[5] State: L3 Item: Program ::= START link(1,1) Statements link(2,1) *END
+[6] State: L4 Item: Program ::= START link(1,1) Statements link(2,1) END*
+[7] State: LSTATEMENTS Item: Statements
+[8] State: LS1 Item: Statements ::= *Statement link(2,1) Statements { $$.1 = $1.1; $$.2 = $2.2; }
+[9] State:  L5 Item: Statements ::= Statement *link(2,1) Statements { $$.1 = $1.1; $$.2 = $2.2; }
+[10] State: L6 Item: Statements ::= Statement link(2,1) *Statements { $$.1 = $1.1; $$.2 = $2.2; }
+[11] State: L8 Item: Statements ::= Statement link(2,1) Statements { $$.1 = $1.1; $$.2 = $2.2; }*
+[12] State: LS2 Item: Statements ::= *Statement { $$.1 = $1.1; $$.2 = $1.2; }
+[13] State: L10 Item: Statements ::= Statement { $$.1 = $1.1; $$.2 = $1.2; }*
+[14] State: STAT Item: Statement
+[15] State: LSTAT1 Item: Statement ::= *INSTRUCTION { $$.1 = $1.1; $$.2 = $1.2; }
+[16] State: L11 Item: Statement ::= INSTRUCTION *{ $$.1 = $1.1; $$.2 = $1.2; }
+[17] State: L12 Item: Statement ::= INSTRUCTION { $$.1 = $1.1; $$.2 = $1.2; }*
+[18] State: LSTAT2 Item: Statement ::= *PREDICATE link(2, 1) ^ link(3,2) Statements   { $$.1 = $1.1; $$.2 = $2.2; }
+[19] State: L13 Item: Statement ::= PREDICATE *link(2, 1) ^ link(3,2) Statements   { $$.1 = $1.1; $$.2 = $2.2; }
+[20] State: L14 Item: Statement ::= PREDICATE link(2, 1) ^ link(3,2) *Statements   { $$.1 = $1.1; $$.2 = $2.2; }
+[21] State: L15 Item: Statement ::= PREDICATE link(2, 1) ^ link(3,2) Statements   *{ $$.1 = $1.1; $$.2 = $2.2; }
+[22] State: L16 Item: Statement ::= PREDICATE link(2, 1) ^ link(3,2) Statements   { $$.1 = $1.1; $$.2 = $2.2; }*
+[23] State: STAT3 Item: Statement ::= *PREDICATE link(2, 1) ^ nolink(1,2) Statements link(3,1)(-1) ^ link(2,2) Statements { $$.1 = $1.1; $$.2 = $2.2; }
+[24] State: L17 Item: Statement ::= PREDICATE *link(2, 1) ^ nolink(1,2) Statements link(3,1)(-1) ^ link(2,2) Statements { $$.1 = $1.1; $$.2 = $2.2; }
+[25] State: L18 Item: Statement ::= PREDICATE link(2, 1) ^ nolink(1,2) *Statements link(3,1)(-1) ^ link(2,2) Statements { $$.1 = $1.1; $$.2 = $2.2; }
+[26] State: L19 Item: Statement ::= PREDICATE link(2, 1) ^ nolink(1,2) Statements *link(3,1)(-1) ^ link(2,2) Statements { $$.1 = $1.1; $$.2 = $2.2; }
+[27] State: L20 Item: Statement ::= PREDICATE link(2, 1) ^ nolink(1,2) Statements link(3,1)(-1) ^ link(2,2) *Statements { $$.1 = $1.1; $$.2 = $2.2; }
+[28] State: L21 Item: Statement ::= PREDICATE link(2, 1) ^ nolink(1,2) Statements link(3,1)(-1) ^ link(2,2) Statements *{ $$.1 = $1.1; $$.2 = $2.2; }
+[29] State: L22 Item: Statement ::= PREDICATE link(2, 1) ^ nolink(1,2) Statements link(3,1)(-1) ^ link(2,2) Statements { $$.1 = $1.1; $$.2 = $2.2; }*
+[30] State: LSTAT4 Item: Statement ::= *PREDICATE link(2,1) ^ link(1,2) Statements { $$.1 = $1.1; $$.2 = $1.3; }
+[31] State: L23 Item: Statement ::= PREDICATE *link(2,1) ^ link(1,2) Statements { $$.1 = $1.1; $$.2 = $1.3; }
+[32] State: L24 Item: Statement ::= PREDICATE link(2,1) ^ link(1,2) *Statements { $$.1 = $1.1; $$.2 = $1.3; }
+[33] State: L25 Item: Statement ::= PREDICATE link(2,1) ^ link(1,2) Statements *{ $$.1 = $1.1; $$.2 = $1.3; }
+[34] State: L26 Item: Statement ::= PREDICATE link(2,1) ^ link(1,2) Statements { $$.1 = $1.1; $$.2 = $1.3; }*
+[35] State: L0 Item: PROGRAM0
