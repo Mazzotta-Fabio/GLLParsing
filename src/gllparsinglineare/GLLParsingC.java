@@ -98,7 +98,7 @@ public class GLLParsingC {
 		op.add(OperazioneLineare.creaInsertNodeGSS("$",contacreate));
 		op.add(OperazioneLineare.creaInsertNodeGSS("Ls"+i+"L0",contacreate));
 		op.add(OperazioneLineare.creaInsertEdgeGSS(gss.getLastNode().element(),u0.element(),contacreate));
-		op.add(OperazioneLineare.creaInsertNodeSppf(cn.toString(),"S",contagetnodet,cn.element().getId()));
+		op.add(OperazioneLineare.creaInsertNodeSppf(cn.toString(),"S",contagetnodet,cn.element().getId(),i));
 		op.add(OperazioneLineare.creaCurrentToken(i,""+buf[i]));
 		op.add(OperazioneLineare.creaGoto(etichetta));
 		contacreate++;
@@ -125,9 +125,9 @@ public class GLLParsingC {
 			case "LS1":
 				op.add(OperazioneLineare.creaStato(etichetta,"S->*adb"));
 				if(buf[i]=='a'){
-					i++;
 					etichetta="Ld1";
-					cn=getNodeT("a","S->*abd",cn);
+					cn=getNodeT("a","S->*abd",cn,i);
+					i++;
 					op.add(OperazioneLineare.creaCurrentToken(i,""+buf[i]));
 					op.add(OperazioneLineare.creaGoto(etichetta));
 				}
@@ -140,10 +140,11 @@ public class GLLParsingC {
 			case "Ld1":
 				op.add(OperazioneLineare.creaStato(etichetta,"S->a*db"));
 				if(buf[i]=='d'){
-					i++;
+					
 					etichetta="Lb1";
 					cn=getNodeP(cn);
-					cn=getNodeT("d","S->a*db",cn);
+					cn=getNodeT("d","S->a*db",cn,i);
+					i++;
 					op.add(OperazioneLineare.creaCurrentToken(i,""+buf[i]));
 					op.add(OperazioneLineare.creaGoto(etichetta));
 				}
@@ -156,10 +157,10 @@ public class GLLParsingC {
 			case "Lb1":
 				op.add(OperazioneLineare.creaStato(etichetta,"S->ad*b"));
 				if(buf[i]=='b'){
-					i++;
 					op.add(OperazioneLineare.creaCurrentToken(i,""+buf[i]));
 					cn=getNodeP(cn);
-					cn=getNodeT("b","S->ad*b",cn);
+					cn=getNodeT("b","S->ad*b",cn,i);
+					i++;
 					etichetta="Labd";
 					op.add(OperazioneLineare.creaGoto(etichetta));
 				}
@@ -180,10 +181,10 @@ public class GLLParsingC {
 			case "LS2":
 				op.add(OperazioneLineare.creaStato(etichetta,"S->*aSb"));
 				if(buf[i]=='a'){
-					i++;
 					op.add(OperazioneLineare.creaCurrentToken(i,""+buf[i]));
 					etichetta="L1";
-					cn=getNodeT("a","S->*aSb",cn);
+					cn=getNodeT("a","S->*aSb",cn,i);
+					i++;
 					op.add(OperazioneLineare.creaGoto(etichetta));
 				}
 				else{
@@ -197,7 +198,7 @@ public class GLLParsingC {
 				if(test(buf[i],"S","Sb")) {
 					cu=create("L2",cu,i,cn);
 					cn=getNodeP(cn);
-					cn=getNodeT("S","S->a*Sb",cn);
+					cn=getNodeT("S","S->a*Sb",cn,-1);
 					etichetta="LS";
 					op.add(OperazioneLineare.creaGoto(etichetta));
 				}
@@ -211,7 +212,7 @@ public class GLLParsingC {
 				op.add(OperazioneLineare.creaStato(etichetta,"S->aS*b"));
 				if(buf[i]=='b'){
 					cn=getNodeP(cn);
-					cn=getNodeT("b","S->aS*b",cn);
+					cn=getNodeT("b","S->aS*b",cn,i);
 					i++;
 					etichetta="L3";
 					op.add(OperazioneLineare.creaCurrentToken(i,""+buf[i]));
@@ -235,9 +236,9 @@ public class GLLParsingC {
 			case "LS3":
 				op.add(OperazioneLineare.creaStato(etichetta,"S->*d"));
 				if(buf[i]=='d'){
-					i++;
 					op.add(OperazioneLineare.creaCurrentToken(i,""+buf[i]));
-					cn=getNodeT("d","S->*d",cn);
+					cn=getNodeT("d","S->*d",cn,i);
+					i++;
 					etichetta="Ld";
 					op.add(OperazioneLineare.creaGoto(etichetta));
 				}
@@ -287,7 +288,7 @@ public class GLLParsingC {
 		}
 	}
 	
-	private static Vertex<IdNodoSppf> getNodeT(String simbolo,String item,Vertex<IdNodoSppf>cn){
+	private static Vertex<IdNodoSppf> getNodeT(String simbolo,String item,Vertex<IdNodoSppf>cn,int pos){
 		Iterator<Edge<IdNodoSppf>>it=sppf.edges();
 		boolean flag=true;
 		while(it.hasNext()) {
@@ -301,7 +302,7 @@ public class GLLParsingC {
 		if(flag) {
 			Vertex<IdNodoSppf> v=sppf.insertVertex(new IdNodoSppf(simbolo,item));
 			v.element().setId(v.hashCode());
-			op.add(OperazioneLineare.creaInsertNodeSppf(v.toString(),item,contagetnodet,v.element().getId()));
+			op.add(OperazioneLineare.creaInsertNodeSppf(v.toString(),item,contagetnodet,v.element().getId(),pos));
 			sppf.insertDirectedEdge(cn, v, null);
 			op.add(OperazioneLineare.creaInsertEdgeSppf(cn.toString(),v.toString(),contagetnodet));
 			contagetnodet++;

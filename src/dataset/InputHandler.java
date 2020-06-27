@@ -1,17 +1,16 @@
-package gllflowchart;
+package dataset;
 
 import java.io.*;
 import java.util.*;
 import java.util.Map.Entry;
 import com.google.gson.Gson;
 import com.google.gson.internal.StringMap;
-import elementijson.OperazioneFlowChart;
-import elementijson.OperazioneFlowChart.Operazione11;
-import graph.*;
+
+import graph.ControllerNodeFlowChart;
+
 
 public class InputHandler {
 	
-	/*inizio zona perfetta*/
 	private ArrayList<Token> buf;
 	
 	public InputHandler() {
@@ -64,14 +63,15 @@ public class InputHandler {
 		    	}
 		    }
 		}
+		ControllerNodeFlowChart.setTokens(buf);
 	}
 	
-	public int getTokenDriver(int pos, int attaccoSinistro, int attaccoDestro) {
+	public int getTokenDriver(int pos, int attaccoSinistro, int attaccoDestro,ArrayList<Integer>tokenViews) {
 		ArrayList<String> attacchi=buf.get(pos).getAttachPoints();
 		for(int i=0;i<buf.size();i++) {
 			Token t1=buf.get(i);
 			ArrayList<String> attacchiEsterni=t1.getAttachPoints();
-			if(i!=pos) {
+			if(isViewed(i,tokenViews)) {
 				if(attacchiEsterni.size()>=attaccoDestro) {
 					if(attacchi.get(attaccoSinistro-1).equals(attacchiEsterni.get(attaccoDestro-1))) {
 						return i;
@@ -82,10 +82,22 @@ public class InputHandler {
 		return -1;
 	}
 	
-	/*fine zona perfetta*/
+	//verifica se e' stato visto il token index
+	private boolean isViewed(int index,ArrayList<Integer> tokenViews) {
+		if(tokenViews==null) {
+			return true;
+		}
+		else {
+			for(Integer s:tokenViews) {
+				if(s==index){
+					return false;
+				}
+			}
+			return true;
+		}
+	}
 	
-	/*inizio zona rischiosa */
-	public int getTokenTester(Statement s,int attaccoStatement,int attaccoToken) {
+	public int getTokenTester(Statement s,int attaccoStatement,int attaccoToken,ArrayList<Integer> tokenViews/*,int pos*/) {
 		String at=null;
 		if(attaccoStatement==2) {
 			at=s.getSecondoAttacco();
@@ -95,44 +107,27 @@ public class InputHandler {
 		}
 		for(int i=0;i<buf.size();i++) {
 			Token ex=buf.get(i);
-			if(ex.getAttachPoints().size()>=attaccoToken){
-				if(ex.getAttachPoints().get(attaccoToken-1).equals(at)) {
-					return i;	
+			if(isViewed(i,tokenViews)) {
+				if(ex.getAttachPoints().size()>=attaccoToken){
+					if(ex.getAttachPoints().get(attaccoToken-1).equals(at)) {
+						return i;
+					}
 				}
 			}
 		}
 		return -1;
 	}
 	
-	public void writeNewStatement(Statement s,ArrayList<OperazioneFlowChart> op) {
-		op.add(OperazioneFlowChart.creaNewStatement("Statement.1",s.getType1(),s.getPrimoAttacco()));
-		op.add(OperazioneFlowChart.creaNewStatement("Statement.2",s.getType2(),s.getSecondoAttacco()));
-	}
-	
-	public void setStatementNode(Statement s,ArrayList<OperazioneFlowChart> op,Vertex<IdNodoSppf> cn) {
-		if(!(cn.element().getNomeNodo().equals("PROGRAM"))) {
-			String	statement="{ $.1 = "+s.getPrimoAttacco()+" , $.2 = "+s.getSecondoAttacco() +" }";	
-			for(OperazioneFlowChart sp:op) {
-				if(sp.getClass().getName().equals("elementijson.OperazioneFlowChart$Operazione11")) {
-					Operazione11 po=(Operazione11)sp;
-					if(po.getIdNodo()==cn.element().getId()) {
-						po.setStatement(statement);
-					}
-				}
+	//metodo per settare un valore trovato 
+	public void setTokenFound(int index,ArrayList<Integer> tokenViews) {
+		boolean flag=true;
+		for(Integer t:tokenViews) {
+			if(t==index) {
+				flag=false;
 			}
 		}
-	}
-	
-	public void setLastStatement(Vertex<IdNodoSppf> cn,Graph<IdNodoSppf>sppf,Statement s,ArrayList<OperazioneFlowChart> op,InputHandler p) {
-		Iterator<Edge<IdNodoSppf>> it=sppf.edges();
-		while(it.hasNext()) {
-			Edge<IdNodoSppf> ed=it.next();
-			Vertex<IdNodoSppf> u1=ed.getStartVertex();
-			Vertex<IdNodoSppf> v1=ed.getEndVertex();
-			if((u1.element().getNomeNodo().equals(cn.element().getNomeNodo())) &&(v1.element().getNomeNodo().equals("STATEMENTS"))){
-				p.setStatementNode(s, op, v1);
-			}
+		if(flag) {
+			tokenViews.add(index);
 		}
 	}
-	/*fine zona rischiosa */ 
 }

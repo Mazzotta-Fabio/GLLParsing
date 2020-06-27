@@ -7,36 +7,27 @@
     },
     {
       "type": "PREDICATE" ,
-      "AttachPoints": ["a","b","c"]
-    },
-    {
-      "type": "PREDICATE" ,
-      "AttachPoints": ["d","e","l"]
+      "AttachPoints": ["a","L4","L5"]
     },
     {
       "type": "INSTRUCTION" ,
-      "AttachPoints": ["b","d"]
+      "AttachPoints": ["L4","L6"]
     },
     {
       "type": "INSTRUCTION" ,
-      "AttachPoints": ["c","f"]
+      "AttachPoints": ["L6","L7"]
     },
     {
       "type": "INSTRUCTION" ,
-      "AttachPoints": ["e","d"]
+      "AttachPoints": ["L5","L10"]
     },
     {
       "type": "INSTRUCTION" ,
-      "AttachPoints": ["l","f"]
-    },
-    {
-      "type": "INSTRUCTION" ,
-      "AttachPoints": ["f","g"]
+      "AttachPoints": ["L10","L7"]
     },
     {
       "type": "END" ,
-      "AttachPoints": ["g"]
+      "AttachPoints": ["L7"]
     }
-    
   ]
 }

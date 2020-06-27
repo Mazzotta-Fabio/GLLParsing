@@ -76,12 +76,14 @@ public abstract class OperazioneLineare {
 		private boolean mark;
 		private int id;
 		private int idNodo;
-		public Operazione11(String op, String callFunction, String parse_state, String item,int id,int idNodo) {
+		private int position;
+		public Operazione11(String op, String callFunction, String parse_state, String item,int id,int idNodo,int position) {
 			super(op, callFunction);
 			this.parse_state = parse_state;
 			this.item = item;
 			this.id=id;
 			this.idNodo=idNodo;
+			this.position=position;
 			mark=false;
 		}
 		public void setMark() {
@@ -207,8 +209,8 @@ public abstract class OperazioneLineare {
 		return new Operazione14("insert_p_element", "pop", nameNode, i, nameNodeSppf);
 	}
 
-	public static Operazione11 creaInsertNodeSppf(String parse_state, String item,int id,int idNodo) {
-		return new Operazione11("insert_sppf_node", "getnodet", parse_state, item,id,idNodo);
+	public static Operazione11 creaInsertNodeSppf(String parse_state, String item,int id,int idNodo,int position) {
+		return new Operazione11("insert_sppf_node", "getnodet", parse_state, item,id,idNodo,position);
 	}
 
 	public static Operazione7 creaInsertEdgeSppf(String u, String v,int id) {

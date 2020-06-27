@@ -98,7 +98,7 @@ public class GLLParsingB {
 		op.add(OperazioneLineare.creaInsertNodeGSS("$",contacreate));
 		op.add(OperazioneLineare.creaInsertNodeGSS("Ls"+i+"L0",contacreate));
 		op.add(OperazioneLineare.creaInsertEdgeGSS(gss.getLastNode().element(),u0.element(),contacreate));
-		op.add(OperazioneLineare.creaInsertNodeSppf(cn.toString(),"S",contagetnodet,cn.element().getId()));
+		op.add(OperazioneLineare.creaInsertNodeSppf(cn.toString(),"S",contagetnodet,cn.element().getId(),i));
 		op.add(OperazioneLineare.creaCurrentToken(i,""+buf[i]));
 		op.add(OperazioneLineare.creaGoto(etichetta));
 		contacreate++;
@@ -134,7 +134,7 @@ public class GLLParsingB {
 			case "LS1":
 				op.add(OperazioneLineare.creaStato(etichetta,"S->*ad"));
 				if(buf[i]=='a'){
-					cn=getNodeT("a","S->*ad",cn);
+					cn=getNodeT("a","S->*ad",cn,i);
 					i++;
 					op.add(OperazioneLineare.creaCurrentToken(i,""+buf[i]));
 					etichetta="La1";
@@ -150,7 +150,7 @@ public class GLLParsingB {
 				op.add(OperazioneLineare.creaStato(etichetta,"S->a*d"));
 				if(buf[i]=='d'){
 					cn=getNodeP(cn);
-					cn=getNodeT("d","S->a*d",cn);
+					cn=getNodeT("d","S->a*d",cn,i);
 					i++;
 					op.add(OperazioneLineare.creaCurrentToken(i,""+buf[i]));
 					etichetta="Lad";
@@ -174,7 +174,7 @@ public class GLLParsingB {
 				op.add(OperazioneLineare.creaStato(etichetta,"S->*Ad"));
 				if(test(buf[i],"S","Ad")){
 					cu=create("L1",cu,i,cn);
-					cn=getNodeT("A","S->*Ad",cn);
+					cn=getNodeT("A","S->*Ad",cn,-1);
 					etichetta="LA";
 					op.add(OperazioneLineare.creaGoto(etichetta));
 				}
@@ -188,7 +188,7 @@ public class GLLParsingB {
 				op.add(OperazioneLineare.creaStato(etichetta,"S->A*d"));
 				if(buf[i]=='d'){
 					cn=getNodeP(cn);
-					cn=getNodeT("d","A->A*d",cn);
+					cn=getNodeT("d","A->A*d",cn,i);
 					i++;
 					op.add(OperazioneLineare.creaCurrentToken(i,""+buf[i]));
 					etichetta="LAd";
@@ -211,7 +211,7 @@ public class GLLParsingB {
 			//epsilon
 			case "LA2":
 				op.add(OperazioneLineare.creaStato(etichetta,"A->e*"));
-				cn=getNodeT("e","A->*eps",cn);
+				cn=getNodeT("e","A->*eps",cn,-1);
 				cn=getNodeP(cn);
 				pop(cu,i,u0,cn);
 				etichetta="L0";
@@ -222,7 +222,7 @@ public class GLLParsingB {
 			case "LA1":
 				op.add(OperazioneLineare.creaStato(etichetta,"A->*a"));
 				if(test(buf[i],"A","a")){
-					cn=getNodeT("a","A->*a",cn);
+					cn=getNodeT("a","A->*a",cn,i);
 					i++;
 					op.add(OperazioneLineare.creaCurrentToken(i, ""+buf[i]));
 					etichetta="La2";
@@ -274,7 +274,7 @@ public class GLLParsingB {
 		}
 	}
 	
-	private static Vertex<IdNodoSppf> getNodeT(String simbolo,String item,Vertex<IdNodoSppf>cn){
+	private static Vertex<IdNodoSppf> getNodeT(String simbolo,String item,Vertex<IdNodoSppf>cn,int pos){
 		Iterator<Edge<IdNodoSppf>>it=sppf.edges();
 		boolean flag=true;
 		while(it.hasNext()) {
@@ -288,7 +288,7 @@ public class GLLParsingB {
 		if(flag) {
 			Vertex<IdNodoSppf> v=sppf.insertVertex(new IdNodoSppf(simbolo,item));
 			v.element().setId(v.hashCode());
-			op.add(OperazioneLineare.creaInsertNodeSppf(v.toString(),item,contagetnodet,v.element().getId()));
+			op.add(OperazioneLineare.creaInsertNodeSppf(v.toString(),item,contagetnodet,v.element().getId(),pos));
 			sppf.insertDirectedEdge(cn, v, null);
 			op.add(OperazioneLineare.creaInsertEdgeSppf(cn.toString(),v.toString(),contagetnodet));
 			contagetnodet++;

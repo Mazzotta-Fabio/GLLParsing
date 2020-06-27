@@ -1,6 +1,7 @@
-package gllflowchart;
+package dataset;
 
 public class Statement {
+	
 	private String type;
 	private String type2;
 	private String primoAttacco;

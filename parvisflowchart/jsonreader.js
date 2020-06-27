@@ -77,9 +77,9 @@ function parsing_info(obj){
     
     events.addGraph(gss);
     events.addGraph(r);
-  //  events.addGraph(u);
-   // events.addGraph(p);
-    //events.addGraph(states);
+    events.addGraph(u);
+    events.addGraph(p);
+    events.addGraph(states);
     events.addGraph(sppf);
     
     events.addText(textinputfile);

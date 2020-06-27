@@ -83,14 +83,18 @@ public abstract class OperazioneFlowChart {
 			if(position>0) {
 				this.position=position;
 			}
+			statement=null;
 		}
-		/*
+		
 		public boolean isMarked() {
 			return mark;
 		}
-		*/
-		public void setMark() {
-			mark=true;
+		
+		public String getStatement() {
+			return statement;
+		}
+		public void setMark(boolean mark) {
+			this.mark=mark;
 		}
 		public String getItem() {
 			return item;
@@ -100,6 +104,9 @@ public abstract class OperazioneFlowChart {
 		}
 		public void setStatement(String statement) {
 			this.statement=statement;
+		}
+		public int getPosition() {
+			return position;
 		}
 	}
 

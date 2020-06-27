@@ -1,19 +1,12 @@
 package gllflowchart;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Iterator;
+import java.io.*;
+import java.util.*;
 import com.google.gson.Gson;
+import dataset.*;
 import elementijson.OperazioneFlowChart;
 import gllparsinglineare.ElementoU;
-import graph.Edge;
-import graph.Graph;
-import graph.IdNodoSppf;
-import graph.Vertex;
+import graph.*;
 import stack.ArrayStack;
 import stack.Stack;
 
@@ -32,12 +25,34 @@ public class GLLFlowChart {
 	private static int contadd;
 	private static int contacreate;
 	private static int contagetnodet;
-	
+
+
+
+	private static class MyList<Object> extends ArrayList<Object> {
+		 Gson gson;
+		 File fJson;
+
+		public MyList(Gson gson, File fJson) {
+			this.gson=gson;
+			this.fJson=fJson;
+		}
+
+		@Override
+		public boolean add(Object e) {
+			boolean res = super.add(e);
+			stampaInLog(gson, fJson, (ArrayList<OperazioneFlowChart>)this);
+			return res;
+		}
+	}
+
 	public static void main(String []args){
 		Gson gson=new Gson();
-		File f=new File("parvisflowchart/test2.json");
 		File fJson=new File("parvisflowchart/log.json");
+
+		File f=new File("parvisflowchart/testMinas.json");
+
 		File fdump=new File("parvisflowchart/dumppos1.txt");
+		ControllerNodeFlowChart.setFile(f.getName());
 		if(f.exists()){
 			try{
 				FileReader f1=new FileReader(f);
@@ -46,7 +61,7 @@ public class GLLFlowChart {
 				r=new ArrayList<DescrittoreRf>();
 				u=new ArrayList<ElementoU>();
 				p=new ArrayList<ElementoPf>();
-				op=new ArrayList<OperazioneFlowChart>();
+				op=new MyList<OperazioneFlowChart>(gson, fJson);
 				Date d=new Date();
 				op.add(OperazioneFlowChart.creaParsingInfo("GLLParsingFlowChart",f.getName(),d.toString(),fdump.getName()));
 				//settaggio dataset
@@ -65,11 +80,7 @@ public class GLLFlowChart {
 			}
 			finally {
 				try {
-					FileWriter writer2=new FileWriter(fJson);
-					String jsonString=gson.toJson(op);
-					PrintWriter pw3=new PrintWriter(writer2,true);
-					pw3.println(jsonString);
-					pw3.close();
+					stampaInLog(gson, fJson, op);
 				}
 				catch(Exception e) {
 					op.add(OperazioneFlowChart.creaEsitoParsing("error_parse"));
@@ -79,10 +90,25 @@ public class GLLFlowChart {
 		}
 		else{
 			System.out.println("File not Found");
-		} 
+		}
 	}
-	
+
+	private static void stampaInLog(Gson gson, File fJson, ArrayList<OperazioneFlowChart> op) {
+		FileWriter writer2= null;
+		try {
+			writer2 = new FileWriter(fJson);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		String jsonString=gson.toJson(op);
+		PrintWriter pw3=new PrintWriter(writer2,true);
+		pw3.println(jsonString);
+		pw3.close();
+	}
+
 	public static String parse(InputHandler buf){
+		//token visti
+		ArrayList<Integer> tokenViews=new ArrayList<Integer>();
 		//dichirazione indici
     	int i=buf.getFirstToken();
     	//inizializzo link calcolati
@@ -106,7 +132,6 @@ public class GLLFlowChart {
 		op.add(OperazioneFlowChart.creaGoto(etichetta));
 		contagetnodet++;
 		contacreate++;
-		//int cod=cn.element().getId();
 		while(true){
 			switch(etichetta){
 			//.START link(1,1) Statements link(2,1) END
@@ -114,6 +139,7 @@ public class GLLFlowChart {
 				op.add(OperazioneFlowChart.creaStato(etichetta,"Program-> *START link(1,1) Statements link(2,1) END"));
 				if((buf.getToken(i).isStart())&&(buf.getToken(i).getType().equals("START"))) {
 					op.add(OperazioneFlowChart.creaSetCurrentToken(i, buf.getToken(i).getType()));
+					buf.setTokenFound(i, tokenViews);
 					cn=getNodeT("start","Program-> *START link(1,1) Statements link(2,1) END",cn,i);
 					etichetta="L1";
 					op.add(OperazioneFlowChart.creaGoto(etichetta));
@@ -126,7 +152,7 @@ public class GLLFlowChart {
 			//START .link(1.1) Statements link(2.1) END
 			case "L1":
 				op.add(OperazioneFlowChart.creaStato(etichetta,"Program-> START *link(1,1) Statements link(2,1) END"));
-				i=buf.getTokenDriver(i,1,1);
+				i=buf.getTokenDriver(i,1,1,tokenViews);
 				if(i>0) {
 					op.add(OperazioneFlowChart.creaGetCurrentToken(i,buf.getToken(i).getType()));
 					etichetta="LSTATS";
@@ -155,7 +181,7 @@ public class GLLFlowChart {
 			//START link(1.1) Statements *link(2.1) END
 			case "L2":
 				op.add(OperazioneFlowChart.creaStato(etichetta, "Program-> START link(1,1) Statements *link(2,1) END"));
-				i=buf.getTokenTester(s.top(), 2, 1);
+				i=buf.getTokenTester(s.top(), 2, 1,null);
 				if(i>0) {
 					op.add(OperazioneFlowChart.creaGetCurrentToken(i,buf.getToken(i).getType()));
 					etichetta="L3";
@@ -171,6 +197,7 @@ public class GLLFlowChart {
 				op.add(OperazioneFlowChart.creaStato(etichetta, "Program-> START link(1,1) Statements link(2,1) *END"));
 				if(buf.getToken(i).getType().equals("END")){
 					op.add(OperazioneFlowChart.creaSetCurrentToken(i, buf.getToken(i).getType()));
+					buf.setTokenFound(i, tokenViews);
 					cn=getNodeP(cn);
 					cn=getNodeT("end","Program-> START link(1,1) Statements link(2,1) *END",cn,i);
 					etichetta="L4";
@@ -178,16 +205,17 @@ public class GLLFlowChart {
 				}
 				else {
 					etichetta="L0";
-					//setMark("Program->START link(1,1) *Statements link(2,1) END",cn.element().getId());
+					ControllerNodeFlowChart.setMark("Program->START link(1,1) *Statements link(2,1) END",cn.element().getId(),sppf,op);
 					op.add(OperazioneFlowChart.creaGoto(etichetta));
 				}
 				break;
 			//START link(1.1) Statements link(2.1) END*
 			case "L4":
 				op.add(OperazioneFlowChart.creaStato(etichetta,"Program-> START link(1,1) Statements link(2,1) END*"));
-				ControllerNodeFlowChart.setLastStatement(cn, sppf, s.top(), op, buf);
 				cn=getNodeP(cn);
-				pop(cu,i,u0,cn,s.duplica());
+				ControllerNodeFlowChart.setStatementNode(s.top(), op, cn);
+				ControllerNodeFlowChart.setStatementNode(s.top());
+				pop(cu,i,u0,cn,s.duplica(),duplicaTokenViews(tokenViews));
 				etichetta="L0";
 				op.add(OperazioneFlowChart.creaGoto(etichetta));
 				break;
@@ -195,10 +223,10 @@ public class GLLFlowChart {
 			case "LSTATEMENTS":
 				op.add(OperazioneFlowChart.creaStato(etichetta, "Statements"));
 				if(test(buf.getToken(i).getType(),"Statements","Statement link(2,1) Statements { $$.1 = $1.1; $$.2 = $2.2; }")){
-					add("LS1",cu,i,cn,s.duplica());
+					add("LS1",cu,i,cn,s.duplica(),duplicaTokenViews(tokenViews));
 				}
 				if(test(buf.getToken(i).getType(),"Statements","Statement { $$.1 = $1.1; $$.2 = $1.2; }")){
-					add("LS2",cu,i,cn,s.duplica());
+					add("LS2",cu,i,cn,s.duplica(),duplicaTokenViews(tokenViews));
 				}
 				etichetta="L0";
 				op.add(OperazioneFlowChart.creaGoto(etichetta));
@@ -220,7 +248,7 @@ public class GLLFlowChart {
 				//Statements *link(2,1) Statements { $$.1 = $1.1; $$.2 = $2.2; }
 			case "L5":
 				op.add(OperazioneFlowChart.creaStato(etichetta, "Statements-> Statement *link(2,1) Statements { $$.1 = $1.1; $$.2 = $2.2; }"));
-				i=buf.getTokenTester(s.top(),2,1);
+				i=buf.getTokenTester(s.top(),2,1,tokenViews);
 				if(i>0) {
 					op.add(OperazioneFlowChart.creaGetCurrentToken(i,buf.getToken(i).getType()));
 					etichetta="L6";
@@ -228,7 +256,7 @@ public class GLLFlowChart {
 				}
 				else {
 					etichetta="L0";
-					//setMark("Statements-> *Statement link(2,1) Statements { $$.1 = $1.1; $$.2 = $2.2; }",cn.element().getId());
+					ControllerNodeFlowChart.setMark("Statements-> *Statement link(2,1) Statements { $$.1 = $1.1; $$.2 = $2.2; }",cn.element().getId(),sppf,op);
 					op.add(OperazioneFlowChart.creaGoto(etichetta));
 				}
 				break;
@@ -244,7 +272,7 @@ public class GLLFlowChart {
 				}
 				else {
 					etichetta="L0";
-					//setMark("Statements-> *Statement link(2,1) Statements { $$.1 = $1.1; $$.2 = $2.2; }",cn.element().getId());
+					ControllerNodeFlowChart.setMark("Statements-> *Statement link(2,1) Statements { $$.1 = $1.1; $$.2 = $2.2; }",cn.element().getId(),sppf,op);
 					op.add(OperazioneFlowChart.creaGoto(etichetta));
 				}
 				break;
@@ -256,8 +284,9 @@ public class GLLFlowChart {
 					s.top().setSecondoAttacco(cv.getType2(), cv.getSecondoAttacco());
 				}
 				cn=getNodeP(cn);
-				buf.setStatementNode(s.top(), op, cn);
-				pop(cu,i,u0,cn,s.duplica());
+				ControllerNodeFlowChart.setStatementNode(s.top());
+				ControllerNodeFlowChart.setStatementNode(s.top(), op, cn);
+				pop(cu,i,u0,cn,s.duplica(),duplicaTokenViews(tokenViews));
 				etichetta="L0";
 				op.add(OperazioneFlowChart.creaGoto(etichetta));
 				break;
@@ -279,8 +308,9 @@ public class GLLFlowChart {
 			case "L10":
 				op.add(OperazioneFlowChart.creaStato(etichetta,"Statements-> Statement { $$.1 = $1.1; $$.2 = $1.2; }*"));
 				cn=getNodeP(cn);
-				buf.setStatementNode(s.top(), op, cn);
-				pop(cu,i,u0,cn,s.duplica());
+				ControllerNodeFlowChart.setStatementNode(s.top());
+				ControllerNodeFlowChart.setStatementNode(s.top(), op, cn);
+				pop(cu,i,u0,cn,s.duplica(),duplicaTokenViews(tokenViews));
 				etichetta="L0";
 				op.add(OperazioneFlowChart.creaGoto(etichetta));
 				break;
@@ -288,16 +318,16 @@ public class GLLFlowChart {
 			case "LSTAT":
 				op.add(OperazioneFlowChart.creaStato(etichetta,"Statement"));
 				if(test(buf.getToken(i).getType(),"Statement","INSTRUCTION { $$.1 = $1.1; $$.2 = $1.2; }")) {
-					add("LSTAT1",cu,i,cn,s.duplica());
+					add("LSTAT1",cu,i,cn,s.duplica(),duplicaTokenViews(tokenViews));
 				}
 				if(test(buf.getToken(i).getType(),"Statement","PREDICATE link(2,1) ^ link(3,2) Statements { $$.1 = $1.1; $$.2 = $2.2; }")) {
-					add("LSTAT2",cu,i,cn,s.duplica());
+					add("LSTAT2",cu,i,cn,s.duplica(),duplicaTokenViews(tokenViews));
 				}
 				if(test(buf.getToken(i).getType(),"Statement","PREDICATE link(2,1) ^ nolink(1,2) Statements link(3,1)(-1) ^ link(2,2) Statements { $$.1 = $1.1; $$.2 = $2.2; }")) {
-					add("LSTAT3",cu,i,cn,s.duplica());
+					add("LSTAT3",cu,i,cn,s.duplica(),duplicaTokenViews(tokenViews));
 				}
 				if(test(buf.getToken(i).getType(),"Statement","PREDICATE link(2,1) ^ link(1,2) Statements { $$.1 = $1.1; $$2 = $1.3; }")) {
-					add("LSTAT4",cu,i,cn,s.duplica());
+					add("LSTAT4",cu,i,cn,s.duplica(),duplicaTokenViews(tokenViews));
 				}
 				etichetta="L0";
 				op.add(OperazioneFlowChart.creaGoto(etichetta));
@@ -305,9 +335,12 @@ public class GLLFlowChart {
 			//Statement->*INSTRUCTION { $$.1 = $1.1; $$.2 = $1.2; }
 			case "LSTAT1":
 				op.add(OperazioneFlowChart.creaStato(etichetta,"Statement-> *INSTRUCTION { $$.1 = $1.1; $$.2 = $1.2; }"));
-				if((buf.getToken(i).getType().equals("INSTRUCTION"))&&(ControllerNodeFlowChart.controlTree(sppf, cn))) {
+				if(buf.getToken(i).getType().equals("INSTRUCTION")) {
+					buf.setTokenFound(i, tokenViews);
 					op.add(OperazioneFlowChart.creaSetCurrentToken(i, buf.getToken(i).getType()));
-					cn=getNodeT("instruction","Statement-> *INSTRUCTION { $$.1 = $1.1; $$.2 = $1.2; }",cn,i);
+					if(ControllerNodeFlowChart.controlTree(sppf, cn)) {
+						cn=getNodeT("instruction","Statement-> *INSTRUCTION { $$.1 = $1.1; $$.2 = $1.2; }",cn,i);
+					}
 					etichetta="L11";
 					op.add(OperazioneFlowChart.creaGoto(etichetta));
 				}
@@ -320,7 +353,7 @@ public class GLLFlowChart {
 			case "L11":
 				op.add(OperazioneFlowChart.creaStato(etichetta, "Statement-> INSTRUCTION *{ $$.1 = $1.1; $$.2 = $1.2; }"));
 				s.push(new Statement(buf.getToken(i).getType(),buf.getToken(i).getAttachPoints().get(0),buf.getToken(i).getType(),buf.getToken(i).getAttachPoints().get(1)));
-				buf.writeNewStatement(s.top(), op);
+				ControllerNodeFlowChart.writeNewStatement(s.top(), op);
 				etichetta="L12";
 				op.add(OperazioneFlowChart.creaGoto(etichetta));
 				break;
@@ -328,8 +361,9 @@ public class GLLFlowChart {
 			case "L12":
 				op.add(OperazioneFlowChart.creaStato(etichetta,"Statement-> INSTRUCTION { $$.1 = $1.1; $$.2 = $1.2; }*"));
 				cn=getNodeP(cn);
-				buf.setStatementNode(s.top(), op,cn);
-				pop(cu,i,u0,cn,s.duplica());
+				ControllerNodeFlowChart.setStatementNode(s.top());
+				ControllerNodeFlowChart.setStatementNode(s.top(), op,cn);
+				pop(cu,i,u0,cn,s.duplica(),duplicaTokenViews(tokenViews));
 				etichetta="L0";
 				op.add(OperazioneFlowChart.creaGoto(etichetta));
 				break;
@@ -337,6 +371,7 @@ public class GLLFlowChart {
 				op.add(OperazioneFlowChart.creaStato(etichetta, "Statement-> *PREDICATE link(2,1) ^ link(1,2) Statements { $$.1 = $1.1; $$.2 = $1.3; }"));
 				if(buf.getToken(i).getType().equals("PREDICATE")) {
 					op.add(OperazioneFlowChart.creaSetCurrentToken(i, buf.getToken(i).getType()));
+					buf.setTokenFound(i, tokenViews);
 					cn=getNodeT("predicate","Statement-> *PREDICATE link(2,1) ^ link(1,2) Statements { $$.1 = $1.1; $$.2 = $1.3; }",cn,i);
 					etichetta="L23";
 					op.add(OperazioneFlowChart.creaGoto(etichetta));
@@ -349,29 +384,29 @@ public class GLLFlowChart {
 			//PREDICATE *link(2,1) ^ link(1,2) Statements   { $$.1 = $1.1; $$.2 = $1.3; }
 			case "L23":
 			op.add(OperazioneFlowChart.creaStato(etichetta, "Statement-> PREDICATE *link(2,1) ^ link(1,2) Statements { $$.1 = $1.1; $$.2 = $1.3; }"));
-			if((buf.getTokenDriver(i,2,1)>0)&&(buf.getTokenDriver(i,1,2)>0)) {
-					i=buf.getTokenDriver(i, 2, 1);
+			if((buf.getTokenDriver(i,2,1,tokenViews)>0)&&(buf.getTokenDriver(i,1,2,tokenViews)>0)) {
+					i=buf.getTokenDriver(i, 2, 1,tokenViews);
 					op.add(OperazioneFlowChart.creaGetCurrentToken(i,buf.getToken(i).getType()));
 					etichetta="L24";
 					op.add(OperazioneFlowChart.creaGoto(etichetta));
 				}
 				else {
 					etichetta="L0";
-					//setMark("Statement-> *PREDICATE link(2,1) ^ link(1,2) Statements { $$.1 = $1.1; $$.2 = $1.3; }",cn.element().getId());
+					ControllerNodeFlowChart.setMark("Statement-> *PREDICATE link(2,1) ^ link(1,2) Statements { $$.1 = $1.1; $$.2 = $1.3; }",cn.element().getId(),sppf,op);
 					op.add(OperazioneFlowChart.creaGoto(etichetta));
 				}
 				break;
 			//PREDICATE link(2,1) ^ link(1,2) *Statements { $$.1 = $1.1; $$.2 = $1.3; }	
 			case "L24":
-			op.add(OperazioneFlowChart.creaStato(etichetta, "Statement-> PREDICATE link(2,1) ^ link(1,2) *Statements { $$.1 = $1.1; $$.2 = $1.3; }"));
-			if(test(buf.getToken(i).getType(),"Statement","Statements { $$.1 = $1.1; $$.2 = $1.3; }")) {
-				cu=create("L25",cu,i,cn);
-				cn=getNodeP(cn);
-				cn=getNodeT("STATEMENTS","Statement-> PREDICATE link(2,1) ^ link(1,2) *Statements { $$.1 = $1.1; $$.2 = $1.3; }",cn,-1);
-				etichetta="LSTATEMENTS";
-				op.add(OperazioneFlowChart.creaGoto(etichetta));
-			}
-			else {
+				op.add(OperazioneFlowChart.creaStato(etichetta, "Statement-> PREDICATE link(2,1) ^ link(1,2) *Statements { $$.1 = $1.1; $$.2 = $1.3; }"));
+				if(test(buf.getToken(i).getType(),"Statement","Statements { $$.1 = $1.1; $$.2 = $1.3; }")) {
+					cu=create("L25",cu,i,cn);
+					cn=getNodeP(cn);
+					cn=getNodeT("STATEMENTS","Statement-> PREDICATE link(2,1) ^ link(1,2) *Statements { $$.1 = $1.1; $$.2 = $1.3; }",cn,-1);
+					etichetta="LSTATEMENTS";
+					op.add(OperazioneFlowChart.creaGoto(etichetta));
+				}
+				else {
 					etichetta="L0";
 					op.add(OperazioneFlowChart.creaGoto(etichetta));
 				}
@@ -379,12 +414,12 @@ public class GLLFlowChart {
 			//PREDICATE link(2,1) ^ link(1,2) Statements *{ $$.1 = $1.1; $$.2 = $1.3; }
 			case "L25":
 				op.add(OperazioneFlowChart.creaStato(etichetta, "Statement-> PREDICATE link(2,1) ^ link(1,2) Statements *{ $$.1 = $1.1; $$.2 = $1.3; }"));
-				i=buf.getTokenTester(s.top(),1,2);
+				i=buf.getTokenTester(s.top(),1,2,null);
 				if(i>0) {
 					if(buf.getToken(i).getType().equals("PREDICATE")) {
 						s.pop();
 						s.push(new Statement(buf.getToken(i).getType(),buf.getToken(i).getAttachPoints().get(0),buf.getToken(i).getType(),buf.getToken(i).getAttachPoints().get(2)));
-						buf.writeNewStatement(s.top(), op);
+						ControllerNodeFlowChart.writeNewStatement(s.top(), op);
 						etichetta="L26";
 						op.add(OperazioneFlowChart.creaGoto(etichetta));
 					}
@@ -402,8 +437,9 @@ public class GLLFlowChart {
 			case "L26":
 				op.add(OperazioneFlowChart.creaStato(etichetta, "Statement-> PREDICATE link(2,1) ^ link(1,2) Statements { $$.1 = $1.1; $$.2 = $1.3; }*"));
 				cn=getNodeP(cn);
-				buf.setStatementNode(s.top(), op, cn);
-				pop(cu,i,u0,cn,s.duplica());
+				ControllerNodeFlowChart.setStatementNode(s.top());
+				ControllerNodeFlowChart.setStatementNode(s.top(),op,cn);
+				pop(cu,i,u0,cn,s.duplica(),duplicaTokenViews(tokenViews));
 				etichetta="L0";
 				op.add(OperazioneFlowChart.creaGoto(etichetta));
 				break;
@@ -412,6 +448,7 @@ public class GLLFlowChart {
 				op.add(OperazioneFlowChart.creaStato(etichetta, "Statement-> *PREDICATE link(2,1) ^ link(3,2) Statements { $$.1 = $1.1; $$.2 = $2.2; }"));
 				if(buf.getToken(i).getType().equals("PREDICATE")) {
 					op.add(OperazioneFlowChart.creaSetCurrentToken(i, buf.getToken(i).getType()));
+					buf.setTokenFound(i, tokenViews);
 					cn=getNodeT("predicate","Statement-> *PREDICATE link(2,1) ^ link(3,2) Statements { $$.1 = $1.1; $$.2 = $2.2; }",cn,i);
 					etichetta="L13";
 					op.add(OperazioneFlowChart.creaGoto(etichetta));
@@ -424,15 +461,15 @@ public class GLLFlowChart {
 			//PREDICATE *link(2, 1) ^ link(3,2) Statements   { $$.1 = $1.1; $$.2 = $2.2; }
 			case "L13":
 				op.add(OperazioneFlowChart.creaStato(etichetta, "Statement-> PREDICATE *link(2,1) ^ link(3,2) Statements { $$.1 = $1.1; $$.2 = $2.2; }"));
-				if((buf.getTokenDriver(i, 2, 1)>0)&&(buf.getTokenDriver(i, 3, 2)>0)) {
-					i=buf.getTokenDriver(i, 2, 1);
+				if((buf.getTokenDriver(i, 2, 1,tokenViews)>0)&&(buf.getTokenDriver(i, 3, 2,tokenViews)>0)) {
+					i=buf.getTokenDriver(i, 2, 1,tokenViews);
 					op.add(OperazioneFlowChart.creaGetCurrentToken(i,buf.getToken(i).getType()));
 					etichetta="L14";
 					op.add(OperazioneFlowChart.creaGoto(etichetta));
 				}
 				else {
 					etichetta="L0";
-					//setMark("Statement-> *PREDICATE link(2,1) ^ link(3,2) Statements { $$.1 = $1.1; $$.2 = $2.2; }",cn.element().getId());
+					ControllerNodeFlowChart.setMark("Statement-> *PREDICATE link(2,1) ^ link(3,2) Statements { $$.1 = $1.1; $$.2 = $2.2; }",cn.element().getId(),sppf,op);
 					op.add(OperazioneFlowChart.creaGoto(etichetta));
 				}
 				break;
@@ -454,12 +491,12 @@ public class GLLFlowChart {
 			//PREDICATE link(2, 1) ^ link(3,2) Statements  *{ $$.1 = $1.1; $$.2 = $2.2; }	
 			case "L15":
 				op.add(OperazioneFlowChart.creaStato(etichetta, "Statement-> PREDICATE link(2,1) ^ link(3,2) Statements *{ $$.1 = $1.1; $$.2 = $2.2; }"));
-				i=buf.getTokenTester(s.top(),2,3);
+				i=buf.getTokenTester(s.top(),2,3,null);
 				if(i>0) {
 					if(buf.getToken(i).getType().equals("PREDICATE")) {
 						Statement st=s.pop();
 						s.push(new Statement(buf.getToken(i).getType(),buf.getToken(i).getAttachPoints().get(0),st.getType2(),st.getSecondoAttacco()));
-						buf.writeNewStatement(s.top(), op);
+						ControllerNodeFlowChart.writeNewStatement(s.top(), op);
 						etichetta="L16";
 						op.add(OperazioneFlowChart.creaGoto(etichetta));
 					}
@@ -477,8 +514,9 @@ public class GLLFlowChart {
 			case "L16":
 				op.add(OperazioneFlowChart.creaStato(etichetta, "Statement-> PREDICATE link(2,1) ^ link(3,2) Statements { $$.1 = $1.1; $$.2 = $2.2; }*"));
 				cn=getNodeP(cn);
-				buf.setStatementNode(s.top(), op, cn);
-				pop(cu,i,u0,cn,s.duplica());
+				ControllerNodeFlowChart.setStatementNode(s.top());
+				ControllerNodeFlowChart.setStatementNode(s.top(),op,cn);
+				pop(cu,i,u0,cn,s.duplica(),duplicaTokenViews(tokenViews));
 				etichetta="L0";
 				op.add(OperazioneFlowChart.creaGoto(etichetta));
 				break;
@@ -487,6 +525,7 @@ public class GLLFlowChart {
 				op.add(OperazioneFlowChart.creaStato(etichetta, "Statement-> *PREDICATE link(2,1) ^ nolink(1,2) Statements link(3,1)(-1) ^ link(2,2) Statements { $$.1 = $1.1; $$.2 = $2.2; }"));
 				if(buf.getToken(i).getType().equals("PREDICATE")) {
 					op.add(OperazioneFlowChart.creaSetCurrentToken(i, buf.getToken(i).getType()));
+					buf.setTokenFound(i, tokenViews);
 					cn=getNodeT("predicate","Statement-> *PREDICATE link(2,1) ^ nolink(1,2) Statements link(3,1)(-1) ^ link(2,2) Statements { $$.1 = $1.1; $$.2 = $2.2; }",cn,i);
 					etichetta="L17";
 					op.add(OperazioneFlowChart.creaGoto(etichetta));
@@ -499,15 +538,15 @@ public class GLLFlowChart {
 			//PREDICATE *link(2, 1) ^ nolink(1,2) Statements link(3,1)(-1) ^ link(2,2) Statements   { $$.1 = $1.1; $$.2 = $2.2; }
 			case "L17":
 				op.add(OperazioneFlowChart.creaStato(etichetta, "Statement-> PREDICATE *link(2,1) ^ nolink(1,2) Statements link(3,1)(-1) ^ link(2,2) Statements { $$.1 = $1.1; $$.2 = $2.2; }"));
-				if((buf.getTokenDriver(i,2,1)>0)&&(!(buf.getTokenDriver(i,1,2)>0))) {
-					i=buf.getTokenDriver(i,2,1);
+				if((buf.getTokenDriver(i,2,1,tokenViews)>0)&&(!(buf.getTokenDriver(i, 1, 2,tokenViews)>0))) {
+					i=buf.getTokenDriver(i,2,1,null);
 					op.add(OperazioneFlowChart.creaGetCurrentToken(i,buf.getToken(i).getType()));
 					etichetta="L18";
 					op.add(OperazioneFlowChart.creaGoto(etichetta));
 				}
 				else {
 					etichetta="L0";
-					//setMark("Statement-> *PREDICATE link(2,1) ^ nolink(1,2) Statements link(3,1)(-1) ^ link(2,2) Statements { $$.1 = $1.1; $$.2 = $2.2; }",cn.element().getId());
+					ControllerNodeFlowChart.setMark("Statement-> *PREDICATE link(2,1) ^ nolink(1,2) Statements link(3,1)(-1) ^ link(2,2) Statements { $$.1 = $1.1; $$.2 = $2.2; }",cn.element().getId(),sppf,op);
 					op.add(OperazioneFlowChart.creaGoto(etichetta));
 				}
 				break;
@@ -529,25 +568,35 @@ public class GLLFlowChart {
 			//PREDICATE link(2, 1) ^ nolink(1,2) Statements *link(3,1)(-1) ^ link(2,2) Statements   { $$.1 = $1.1; $$.2 = $2.2; }
 			case "L19":
 				op.add(OperazioneFlowChart.creaStato(etichetta, "Statement-> PREDICATE link(2,1) ^ nolink(1,2) Statements *link(3,1)(-1) ^ link(2,2) Statements { $$.1 = $1.1; $$.2 = $2.2; }"));
-				i=buf.getTokenTester(s.top(), 1, 2);
+				i=buf.getTokenTester(s.top(),1,2,null);
 				if(i>0) {
-					if(buf.getToken(i).getType().equals("PREDICATE")) {
-						i=buf.getTokenDriver(i,3,1);
-						//op.add(OperazioneFlowChart.creaGetCurrentToken(i,buf.getToken(i).getType()));
-						etichetta="L20";
+					if((buf.getToken(i).getType().equals("PREDICATE"))){//&&(!(buf.getToken(i).getAttachPoints().get(0).equals(s.top().getSecondoAttacco())))) {
+						i=buf.getTokenDriver(i,3,1,null);
+						etichetta="L55";
 						op.add(OperazioneFlowChart.creaGoto(etichetta));
 					}
 					else {
+						s.pop();
 						etichetta="L0";
-						//setMark("Statement-> PREDICATE link(2,1) ^ nolink(1,2) *Statements link(3,1)(-1) ^ link(2,2) Statements { $$.1 = $1.1; $$.2 = $2.2; }",cn.element().getId());
+						ControllerNodeFlowChart.setMark("Statement-> PREDICATE link(2,1) ^ nolink(1,2) *Statements link(3,1)(-1) ^ link(2,2) Statements { $$.1 = $1.1; $$.2 = $2.2; }",cn.element().getId(),sppf,op);
 						op.add(OperazioneFlowChart.creaGoto(etichetta));
 					}
 				}
 				else {
+					s.pop();
 					etichetta="L0";
-					//setMark("Statement-> PREDICATE link(2,1) ^ nolink(1,2) *Statements link(3,1)(-1) ^ link(2,2) Statements { $$.1 = $1.1; $$.2 = $2.2; }",cn.element().getId());
+					ControllerNodeFlowChart.setMark("Statement-> PREDICATE link(2,1) ^ nolink(1,2) *Statements link(3,1)(-1) ^ link(2,2) Statements { $$.1 = $1.1; $$.2 = $2.2; }",cn.element().getId(),sppf,op);
 					op.add(OperazioneFlowChart.creaGoto(etichetta));
 				}
+				break;
+			case "L55":
+				op.add(OperazioneFlowChart.creaStato(etichetta, "DoubleChanceIfThenElse"));
+				if(i>0) {
+					add("L20",cu,i,cn,s.duplica(),duplicaTokenViews(tokenViews));
+					add("L5",cu,i,cn,s.duplica(),duplicaTokenViews(tokenViews));
+				}
+				etichetta="L0";
+				op.add(OperazioneFlowChart.creaGoto(etichetta));
 				break;
 			//PREDICATE link(2, 1) ^ nolink(1,2) Statements link(3,1)(-1) ^ link(2,2) *Statements   { $$.1 = $1.1; $$.2 = $2.2; }
 			case "L20":
@@ -561,21 +610,21 @@ public class GLLFlowChart {
 				}
 				else {
 					etichetta="L0";
-					//setMark("Statement-> PREDICATE link(2,1) ^ nolink(1,2) *Statements link(3,1)(-1) ^ link(2,2) Statements { $$.1 = $1.1; $$.2 = $2.2; }",cn.element().getId());
-					//setMark("Statement-> *PREDICATE link(2,1) ^ nolink(1,2) Statements link(3,1)(-1) ^ link(2,2) Statements { $$.1 = $1.1; $$.2 = $2.2; }",0);
+					ControllerNodeFlowChart.setMark("Statement-> PREDICATE link(2,1) ^ nolink(1,2) *Statements link(3,1)(-1) ^ link(2,2) Statements { $$.1 = $1.1; $$.2 = $2.2; }",cn.element().getId(),sppf,op);
+					ControllerNodeFlowChart.setMarkIf(sppf,op,"Statement-> *PREDICATE link(2,1) ^ nolink(1,2) Statements link(3,1)(-1) ^ link(2,2) Statements { $$.1 = $1.1; $$.2 = $2.2; }");
 					op.add(OperazioneFlowChart.creaGoto(etichetta));
 				}
 				break;
 			//PREDICATE link(2, 1) ^ nolink(1,2) Statements link(3,1)(-1) ^ link(2,2) Statements   *{ $$.1 = $1.1; $$.2 = $2.2; }
 			case "L21":
 				op.add(OperazioneFlowChart.creaStato(etichetta, "Statement-> PREDICATE link(2,1) ^ nolink(1,2) Statements link(3,1)(-1) ^ link(2,2) Statements *{ $$.1 = $1.1; $$.2 = $2.2; }"));
-				i=buf.getTokenTester(s.top(), 1, 3);
-				s.pop();
+				Statement s1=s.pop();
+				Statement s2=s.pop();
+				i=buf.getTokenTester(s1, 1, 3,null);
 				if(i>0) {
-					if(buf.getToken(i).getType().equals("PREDICATE")){
-						Statement sp=s.pop();
-						s.push(new Statement(buf.getToken(i).getType(),buf.getToken(i).getAttachPoints().get(0),sp.getType2(),sp.getSecondoAttacco()));
-						buf.writeNewStatement(s.top(), op);
+					if(/*(s1.getSecondoAttacco().equals(s2.getSecondoAttacco()))&&*/(buf.getToken(i).getType().equals("PREDICATE"))) {
+						s.push(new Statement(buf.getToken(i).getType(),buf.getToken(i).getAttachPoints().get(0),s1.getType2(),s1.getSecondoAttacco()));
+						ControllerNodeFlowChart.writeNewStatement(s.top(), op);
 						etichetta="L22";
 						op.add(OperazioneFlowChart.creaGoto(etichetta));	
 					}
@@ -586,15 +635,16 @@ public class GLLFlowChart {
 				}
 				else {
 					etichetta="L0";
-					op.add(OperazioneFlowChart.creaGoto(etichetta));	
+					op.add(OperazioneFlowChart.creaGoto(etichetta));
 				}
 				break;
 			//PREDICATE link(2, 1) ^ nolink(1,2) Statements link(3,1)(-1) ^ link(2,2) Statements   { $$.1 = $1.1; $$.2 = $2.2; }*
 			case "L22":
 				op.add(OperazioneFlowChart.creaStato(etichetta, "Statements-> PREDICATE link(2,1) ^ nolink(1,2) Statements link(3,1)(-1) ^ link(2,2) Statements { $$.1 = $1.1; $$.2 = $2.2; }*"));
 				cn=getNodeP(cn);
-				buf.setStatementNode(s.top(), op, cn);
-				pop(cu,i,u0,cn,s.duplica());
+				ControllerNodeFlowChart.setStatementNode(s.top());
+				ControllerNodeFlowChart.helpIf(s.top(), op,sppf);
+				pop(cu,i,u0,cn,s.duplica(),duplicaTokenViews(tokenViews));
 				etichetta="L0";
 				op.add(OperazioneFlowChart.creaGoto(etichetta));
 				break;
@@ -606,12 +656,13 @@ public class GLLFlowChart {
 					cu=r.get(0).getU();
 					cn=r.get(0).getV();
 					s=r.get(0).getStatements();
-					System.out.println(etichetta+" STATEMENTS: "+s);
+					System.out.println(etichetta+" Index: "+i+" STATEMENTS: "+s +" tokenViews: "+tokenViews);
 					op.add(OperazioneFlowChart.creaInformazione("remove_r_element"));
 					op.add(OperazioneFlowChart.creaGoto(etichetta));
 					r.remove(0);
 				}
 				else{
+					ControllerNodeFlowChart.writeStatementNode(op, sppf);
 					if(u.size()==0){
 						op.add(OperazioneFlowChart.creaEsitoParsing("failure_parse"));
 						return "NON SUCCESSO";
@@ -623,7 +674,6 @@ public class GLLFlowChart {
 						}
 						else{
 							op.add(OperazioneFlowChart.creaEsitoParsing("failure_parse"));
-							//setMark("PROGRAM",cod);
 							return "NON SUCCESSO";
 						}
 					}
@@ -634,10 +684,10 @@ public class GLLFlowChart {
 	}
 	
 	//ok
-	private static void add(String etichetta, Vertex<String> nu,int j,Vertex<IdNodoSppf> cn,Stack<Statement>statement){
+	private static void add(String etichetta, Vertex<String> nu,int j,Vertex<IdNodoSppf> cn,Stack<Statement>statement,ArrayList<Integer> tokenViews){
 		u.add(new ElementoU(etichetta,nu));
 		op.add(OperazioneFlowChart.creaInsertUelement(etichetta, nu.element(),contadd));
-		r.add(new DescrittoreRf(etichetta,nu,j,cn,statement));
+		r.add(new DescrittoreRf(etichetta,nu,j,cn,statement,tokenViews));
 		op.add(OperazioneFlowChart.creaInsertRelement(etichetta,nu.element(), j,cn.toString(),contadd));
 		contadd++;
 	}
@@ -716,12 +766,12 @@ public class GLLFlowChart {
 				flag=false;
 			}
 		}
-		if( (flag)&&(!(v.element().equals(u.element()))) /*&& (ControllerNodeFlowChart.controlCycle(gss,v,u))*/){
+		if((flag)&&(!(v.element().equals(u.element())))){
 			gss.insertDirectedEdge(v, u, "");
 			op.add(OperazioneFlowChart.creaInsertEdgeGSS(v.element(),u.element(),contacreate));
 			for(ElementoPf elp:p){
 				if(elp.getU().element().equals(v.element())){
-					add(etichetta,u,elp.getK(),cn,elp.getStatements().duplica());
+					add(etichetta,u,elp.getK(),cn,elp.getStatements().duplica(),duplicaTokenViews(elp.getTokenViews()));
 				}
 			}
 		}
@@ -729,11 +779,11 @@ public class GLLFlowChart {
 		return v;
 	}
 	
-	private static void pop(Vertex<String> u,int j,Vertex<String> u0,Vertex<IdNodoSppf>cn,Stack<Statement> statement) {
+	private static void pop(Vertex<String> u,int j,Vertex<String> u0,Vertex<IdNodoSppf>cn,Stack<Statement> statement,ArrayList<Integer> tokenViews) {
 		//if u diverso da u0
 		if(!(u.element().equals(u0.element()))){
 			//mettiamo elemento u,j a p
-			p.add(new ElementoPf(u,j,cn,statement));
+			p.add(new ElementoPf(u,j,cn,statement,tokenViews));
 			op.add(OperazioneFlowChart.creaInsertPelement(u.element(), j, cn.toString()));
 			Iterator<Edge<String>> eset=gss.edges();
 			//per ogni figlio v di aggiungi lu,v,j ad r e u
@@ -748,7 +798,7 @@ public class GLLFlowChart {
 						etichetta=etichetta+u1.element().substring(i,i+1);
 						i++;
 					}
-					add(u1.element().substring(etichetta.length()),v1,j,cn,statement.duplica());
+					add(u1.element().substring(etichetta.length()),v1,j,cn,statement.duplica(),duplicaTokenViews(tokenViews));
 				}
 			}
 		}
@@ -792,6 +842,15 @@ public class GLLFlowChart {
 			}
 		}
 		return false;
+	}
+	
+	// duplica i token visti
+	private static ArrayList<Integer> duplicaTokenViews(ArrayList<Integer> tokenViews) {
+		ArrayList<Integer> newTokenViews = new ArrayList<Integer>();
+		for (Integer t : tokenViews) {
+			newTokenViews.add(t);
+		}
+		return newTokenViews;
 	}
 	
 }
